@@ -1,0 +1,51 @@
+{
+  "name": "vite-template",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "biome check --write .",
+    "format": "biome format --write .",
+    "check": "biome check .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@heroui/button": "2.2.27",
+    "@heroui/code": "2.2.21",
+    "@heroui/dropdown": "2.3.27",
+    "@heroui/input": "2.4.28",
+    "@heroui/kbd": "2.2.22",
+    "@heroui/link": "2.2.23",
+    "@heroui/navbar": "2.2.25",
+    "@heroui/snippet": "2.2.28",
+    "@heroui/switch": "2.2.24",
+    "@heroui/system": "2.4.23",
+    "@heroui/theme": "2.4.23",
+    "@heroui/use-theme": "2.1.10",
+    "@react-aria/visually-hidden": "3.8.28",
+    "@react-types/shared": "3.32.1",
+    "@tailwindcss/postcss": "4.1.11",
+    "@tailwindcss/vite": "4.1.11",
+    "clsx": "2.1.1",
+    "framer-motion": "11.18.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.23.0",
+    "tailwind-variants": "3.1.1",
+    "tailwindcss": "4.1.11"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.5",
+    "@types/node": "20.5.7",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "@vitejs/plugin-react": "4.7.0",
+    "postcss": "8.5.6",
+    "typescript": "5.6.3",
+    "vite": "6.0.11",
+    "vite-tsconfig-paths": "5.1.4"
+  },
+  "packageManager": "pnpm@10.18.0+sha512.e804f889f1cecc40d572db084eec3e4881739f8dec69c0ff10d2d1beff9a4e309383ba27b5b750059d7f4c149535b6cd0d2cb1ed3aeb739239a4284a68f40cfa"
+}
