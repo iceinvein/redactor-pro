@@ -1,6 +1,33 @@
 @import "tailwindcss";
 @config "../../tailwind.config.js";
 
+/* Prevent horizontal scroll */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* App background: subtle radial + linear blend; dark-mode aware */
+.app-bg {
+  /* Fallback colors to avoid theme() resolution issues */
+  background-color: #f8fafc; /* light surface */
+  background-image:
+    radial-gradient(1200px 600px at 80% -10%, hsl(var(--heroui-primary) / 0.10), transparent),
+    radial-gradient(900px 500px at -10% 110%, hsl(var(--heroui-secondary) / 0.10), transparent);
+}
+:root.dark .app-bg {
+  background-color: #0a0a0a; /* dark surface */
+  background-image:
+    radial-gradient(1200px 600px at 80% -10%, hsl(var(--heroui-primary) / 0.06), transparent),
+    radial-gradient(900px 500px at -10% 110%, hsl(var(--heroui-secondary) / 0.06), transparent);
+}
+
 /* Canvas Viewer Styles */
 .canvas-container {
   cursor: default;
@@ -16,7 +43,6 @@
   justify-content: center;
   min-width: 100%;
   min-height: 100%;
-  padding: 2rem;
   transition: transform 0.1s ease-out;
 }
 

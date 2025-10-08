@@ -1,4 +1,5 @@
 import { Switch } from "@heroui/switch";
+import { AnimatePresence, motion } from "framer-motion";
 import { type PIIDetection, PIIType } from "@/types/redaction";
 
 interface PIIListPanelProps {
@@ -60,11 +61,11 @@ export const PIIListPanel = ({
 
   return (
     <aside
-      className="w-80 border-l border-default-200 bg-default-50 flex flex-col h-full"
+      className="w-80 border-l border-default-200 bg-default-50/70 backdrop-blur supports-[backdrop-filter]:bg-default-50/50 flex flex-col h-full"
       aria-label="Detected PII panel"
     >
       {/* Header */}
-      <div className="p-4 border-b border-default-200">
+      <div className="p-4 border-b border-default-200/60">
         <h3 className="text-lg font-semibold">Detected PII</h3>
         <output
           className="text-sm text-default-500 mt-1 block"
@@ -102,76 +103,89 @@ export const PIIListPanel = ({
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-default-200">
-            {detections.map((detection, index) => {
-              const detectionId = getDetectionId(detection, index);
-              const isEnabled = enabledDetections.has(detectionId);
+          <ul className="divide-y divide-default-200">
+            <AnimatePresence initial={false}>
+              {detections.map((detection, index) => {
+                const detectionId = getDetectionId(detection, index);
+                const isEnabled = enabledDetections.has(detectionId);
 
-              return (
-                <button
-                  type="button"
-                  key={detectionId}
-                  className="w-full p-4 hover:bg-default-100 transition-colors cursor-pointer text-left"
-                  onClick={() => onHighlightDetection(detectionId)}
-                  onMouseEnter={() => onHighlightDetection(detectionId)}
-                  onMouseLeave={() => onHighlightDetection(null)}
-                  aria-label={`${PII_TYPE_LABELS[detection.type]}: ${truncateText(detection.text)}, confidence ${Math.round(detection.confidence * 100)}%, ${isEnabled ? "enabled" : "disabled"}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      {/* PII Type Badge */}
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${
-                          PII_TYPE_COLORS[detection.type]
-                        }`}
-                        aria-hidden="true"
-                      >
-                        {PII_TYPE_LABELS[detection.type]}
-                      </span>
+                return (
+                  <motion.li
+                    key={detectionId}
+                    layout
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                  >
+                    <motion.button
+                      type="button"
+                      className="w-full p-4 hover:bg-default-100 transition-colors cursor-pointer text-left"
+                      onClick={() => onHighlightDetection(detectionId)}
+                      onMouseEnter={() => onHighlightDetection(detectionId)}
+                      onMouseLeave={() => onHighlightDetection(null)}
+                      aria-label={`${PII_TYPE_LABELS[detection.type]}: ${truncateText(detection.text)}, confidence ${Math.round(detection.confidence * 100)}%, ${isEnabled ? "enabled" : "disabled"}`}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      transition={{ duration: 0.08 }}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          {/* PII Type Badge */}
+                          <span
+                            className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${
+                              PII_TYPE_COLORS[detection.type]
+                            }`}
+                            aria-hidden="true"
+                          >
+                            {PII_TYPE_LABELS[detection.type]}
+                          </span>
 
-                      {/* Text Preview */}
-                      <p
-                        className="text-sm font-mono break-words mb-2"
-                        aria-hidden="true"
-                      >
-                        {truncateText(detection.text)}
-                      </p>
+                          {/* Text Preview */}
+                          <p
+                            className="text-sm font-mono break-words mb-2"
+                            aria-hidden="true"
+                          >
+                            {truncateText(detection.text)}
+                          </p>
 
-                      {/* Confidence */}
-                      <div
-                        className="flex items-center gap-2 text-xs"
-                        aria-hidden="true"
-                      >
-                        <span className="text-default-500">Confidence:</span>
-                        <span
-                          className={`font-semibold ${getConfidenceColor(detection.confidence)}`}
-                        >
-                          {Math.round(detection.confidence * 100)}%
-                        </span>
+                          {/* Confidence */}
+                          <div
+                            className="flex items-center gap-2 text-xs"
+                            aria-hidden="true"
+                          >
+                            <span className="text-default-500">Confidence:</span>
+                            <span
+                              className={`font-semibold ${getConfidenceColor(detection.confidence)}`}
+                            >
+                              {Math.round(detection.confidence * 100)}%
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Toggle Switch */}
+                        <Switch
+                          size="sm"
+                          isSelected={isEnabled}
+                          onValueChange={(enabled) =>
+                            onToggleDetection(detectionId, enabled)
+                          }
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`${isEnabled ? "Disable" : "Enable"} redaction for this ${PII_TYPE_LABELS[detection.type]}`}
+                        />
                       </div>
-                    </div>
-
-                    {/* Toggle Switch */}
-                    <Switch
-                      size="sm"
-                      isSelected={isEnabled}
-                      onValueChange={(enabled) =>
-                        onToggleDetection(detectionId, enabled)
-                      }
-                      onClick={(e) => e.stopPropagation()}
-                      aria-label={`${isEnabled ? "Disable" : "Enable"} redaction for this ${PII_TYPE_LABELS[detection.type]}`}
-                    />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                    </motion.button>
+                  </motion.li>
+                );
+              })}
+            </AnimatePresence>
+          </ul>
         )}
       </section>
 
       {/* Footer Stats */}
       {detections.length > 0 && (
-        <footer className="p-4 border-t border-default-200 bg-default-100">
+        <footer className="p-4 border-t border-default-200 bg-default-100/70 backdrop-blur">
           <h4 className="sr-only">Redaction Statistics</h4>
           <output className="text-xs text-default-600 block">
             <div className="flex justify-between mb-1">

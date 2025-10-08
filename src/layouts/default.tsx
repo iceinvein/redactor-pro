@@ -1,5 +1,3 @@
-import { Link } from "@heroui/link";
-
 import { Navbar } from "@/components/navbar";
 
 export default function DefaultLayout({
@@ -8,22 +6,17 @@ export default function DefaultLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative flex flex-col h-screen">
+    <div className="relative flex h-screen flex-col overflow-hidden app-bg">
+      {/* Decorative gradient blobs */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-default-50 dark:to-default-950" />
+      <div aria-hidden className="pointer-events-none absolute -top-24 right-[-10%] h-72 w-72 rounded-full blur-3xl opacity-30 bg-primary/30 dark:bg-primary/20" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-24 left-[-10%] h-72 w-72 rounded-full blur-3xl opacity-30 bg-secondary/30 dark:bg-secondary/20" />
+
       <Navbar />
-      <main className="container mx-auto max-w-7xl px-6 flex-grow pt-16">
+
+      <main className="flex-1 relative overflow-hidden">
         {children}
       </main>
-      <footer className="w-full flex items-center justify-center py-3">
-        <Link
-          isExternal
-          className="flex items-center gap-1 text-current"
-          href="https://heroui.com"
-          title="heroui.com homepage"
-        >
-          <span className="text-default-600">Powered by</span>
-          <p className="text-primary">HeroUI</p>
-        </Link>
-      </footer>
     </div>
   );
 }

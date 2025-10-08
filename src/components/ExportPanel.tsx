@@ -1,5 +1,6 @@
 import { Button, ButtonGroup } from "@heroui/button";
-import { useState } from "react";
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 interface ExportPanelProps {
   onExport: (format: "pdf" | "png") => Promise<void>;
@@ -18,26 +19,27 @@ export const ExportPanel = ({
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
 
+  useEffect(() => {
+    if (!isExporting) return;
+    // Smooth progress while exporting to give feedback
+    const id = setInterval(() => {
+      setExportProgress((p) => Math.min(90, p + 2));
+    }, 80);
+    return () => clearInterval(id);
+  }, [isExporting]);
+
   const handleExport = async () => {
     setIsExporting(true);
     setExportProgress(0);
 
     try {
-      // Simulate progress
-      const progressInterval = setInterval(() => {
-        setExportProgress((prev) => Math.min(prev + 10, 90));
-      }, 100);
-
       await onExport(selectedFormat);
-
-      clearInterval(progressInterval);
       setExportProgress(100);
-
       // Reset after a short delay
       setTimeout(() => {
         setIsExporting(false);
         setExportProgress(0);
-      }, 1000);
+      }, 700);
     } catch (error) {
       setIsExporting(false);
       setExportProgress(0);
@@ -47,7 +49,7 @@ export const ExportPanel = ({
 
   return (
     <section
-      className="p-4 border-t border-default-200 bg-default-50"
+      className="p-4 border-t border-default-200 bg-default-50/70 backdrop-blur"
       aria-label="Export document panel"
     >
       <h3 className="text-sm font-semibold mb-3">Export Document</h3>
@@ -119,49 +121,51 @@ export const ExportPanel = ({
             <span>Exporting...</span>
             <output aria-live="polite">{exportProgress}%</output>
           </div>
-          <progress
-            className="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-default-200 [&::-webkit-progress-value]:bg-primary [&::-moz-progress-bar]:bg-primary"
-            value={exportProgress}
-            max={100}
-            aria-label="Export progress"
-          />
+          <div className="w-full h-2 rounded-full overflow-hidden bg-default-200">
+            <motion.div
+              className="h-full bg-primary"
+              initial={{ width: 0 }}
+              animate={{ width: `${exportProgress}%` }}
+              transition={{ ease: "easeOut", duration: 0.2 }}
+            />
+          </div>
         </div>
       )}
 
       {/* Export Button */}
-      <Button
-        color="success"
-        size="lg"
-        className="w-full"
-        onPress={handleExport}
-        isDisabled={!hasDocument || !hasRedactions || isExporting}
-        isLoading={isExporting}
-        aria-label="Export redacted document"
-      >
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
+      <motion.div whileTap={{ scale: 0.98 }}>
+        <Button
+          color="success"
+          size="lg"
+          className="w-full"
+          onPress={handleExport}
+          isDisabled={!hasDocument || !hasRedactions || isExporting}
+          isLoading={isExporting}
+          aria-label="Export redacted document"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-          />
-        </svg>
-        <span className="ml-2">{isExporting ? "Exporting..." : "Export"}</span>
-      </Button>
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            />
+          </svg>
+          <span className="ml-2">{isExporting ? "Exporting..." : "Export"}</span>
+        </Button>
+      </motion.div>
 
       {/* Info Text */}
       <output className="mt-3 text-xs text-default-600 block text-center">
         {!hasDocument && <p>Upload a document to enable export.</p>}
         {hasDocument && !hasRedactions && (
-          <p className="text-warning-600">
-            Add redactions to enable export.
-          </p>
+          <p className="text-warning-600">Add redactions to enable export.</p>
         )}
         {hasDocument && hasRedactions && (
           <p className="text-success-600">

@@ -212,27 +212,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 Licensed under the [MIT license](LICENSE).
 
-## 🙏 Acknowledgments
-
-- [Mozilla PDF.js](https://mozilla.github.io/pdf.js/) - Excellent PDF rendering
-- [Tesseract.js](https://tesseract.projectnaptha.com/) - Browser-based OCR
-- [HeroUI](https://heroui.com) - Beautiful React components
-- [jsPDF](https://github.com/parallax/jsPDF) - PDF generation
-
-## 📸 Screenshots
-
-### Main Interface
-Upload documents and see real-time redaction preview with solid black boxes.
-
-### PII Detection
-Automatically detects emails, phone numbers, SSNs, and more with confidence scores.
-
-### Manual Redaction
-Draw custom boxes over any sensitive content with click-and-drag.
-
-### Export Options
-Choose PDF or PNG format for your permanently redacted document.
-
 ---
 
 **Built with privacy in mind. Your documents never leave your browser.** 🔒

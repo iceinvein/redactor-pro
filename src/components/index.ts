@@ -7,5 +7,5 @@ export { PageNavigator } from "./PageNavigator";
 export { PIIListPanel } from "./PIIListPanel";
 export { ProcessingStatus } from "./ProcessingStatus";
 export { RedactionToolbar } from "./RedactionToolbar";
-export { Toast, ToastContainer } from "./Toast";
+export { addToast, ToastProvider } from "./Toast";
 export { ThemeSwitch } from "./theme-switch";

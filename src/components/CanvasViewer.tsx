@@ -93,85 +93,87 @@ export const CanvasViewer = ({
   }, []);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col min-h-full">
       {/* Zoom Controls */}
       <div
-        className="flex items-center gap-2 p-4 border-b border-default-200"
+        className="flex items-center justify-between gap-2 p-4 border-b border-default-200"
         role="toolbar"
         aria-label="Canvas zoom controls"
       >
-        <Button
-          size="sm"
-          variant="flat"
-          onPress={handleZoomOut}
-          isDisabled={zoom <= MIN_ZOOM}
-          aria-label="Zoom out"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={handleZoomOut}
+            isDisabled={zoom <= MIN_ZOOM}
+            aria-label="Zoom out"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"
-            />
-          </svg>
-        </Button>
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"
+              />
+            </svg>
+          </Button>
 
-        <output
-          className="text-sm font-medium min-w-[60px] text-center"
-          aria-live="polite"
-          aria-label={`Current zoom level: ${Math.round(zoom * 100)} percent`}
-        >
-          {Math.round(zoom * 100)}%
-        </output>
-
-        <Button
-          size="sm"
-          variant="flat"
-          onPress={handleZoomIn}
-          isDisabled={zoom >= MAX_ZOOM}
-          aria-label="Zoom in"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
+          <output
+            className="text-sm font-medium min-w-[60px] text-center"
+            aria-live="polite"
+            aria-label={`Current zoom level: ${Math.round(zoom * 100)} percent`}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-            />
-          </svg>
-        </Button>
+            {Math.round(zoom * 100)}%
+          </output>
 
-        <Button
-          size="sm"
-          variant="flat"
-          onPress={handleZoomReset}
-          aria-label="Reset zoom to 100%"
-        >
-          Reset
-        </Button>
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={handleZoomIn}
+            isDisabled={zoom >= MAX_ZOOM}
+            aria-label="Zoom in"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+              />
+            </svg>
+          </Button>
 
-        <div className="ml-4 text-xs text-default-600" role="note">
-          Tip: Ctrl/Cmd + Scroll to zoom, Shift + Drag to pan
+          <Button
+            size="sm"
+            variant="flat"
+            onPress={handleZoomReset}
+            aria-label="Reset zoom to 100%"
+          >
+            Reset
+          </Button>
+
+          <div className="ml-4 text-xs text-default-600" role="note">
+            Tip: Ctrl/Cmd + Scroll to zoom, Shift + Drag to pan
+          </div>
         </div>
       </div>
 
       {/* Canvas Container */}
       <div
         ref={containerRef}
-        className={`flex-1 overflow-auto bg-default-100 relative canvas-container ${isPanning ? "panning" : ""}`}
+        className={`flex-1 overflow-auto bg-default-100 relative canvas-container pb-16 ${isPanning ? "panning" : ""}`}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}

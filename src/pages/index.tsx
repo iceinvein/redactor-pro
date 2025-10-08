@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CanvasViewer } from "@/components/CanvasViewer";
 import { DocumentUpload } from "@/components/DocumentUpload";
-import { ExportPanel } from "@/components/ExportPanel";
-import { PageNavigator } from "@/components/PageNavigator";
-import { PIIListPanel } from "@/components/PIIListPanel";
 import { ProcessingStatus } from "@/components/ProcessingStatus";
-import { RedactionToolbar } from "@/components/RedactionToolbar";
-import { ToastContainer } from "@/components/Toast";
+
+import { LeftRail } from "@/components/LeftRail";
+import { RightPanel } from "@/components/RightPanel";
+import { BottomDock } from "@/components/BottomDock";
 import { useDocument, useErrors, useProcessing, useRedactions } from "@/hooks";
 import {
   CanvasController,
@@ -25,6 +24,7 @@ import {
   PIIType,
 } from "@/types/redaction";
 import { downloadCanvasAsScreenshot } from "@/utils/screenshot";
+import { Button } from "@heroui/button";
 
 export default function IndexPage() {
   // Hooks
@@ -49,8 +49,6 @@ export default function IndexPage() {
   } = useProcessing();
 
   const {
-    errors,
-    dismissError,
     handleFileError,
     handleOCRError,
     handlePIIDetectionError,
@@ -66,6 +64,7 @@ export default function IndexPage() {
   );
   const [manualOnlyMode, setManualOnlyMode] = useState(false);
   const [_renderTrigger, setRenderTrigger] = useState(0);
+  const [exportFormat, setExportFormat] = useState<"pdf" | "png">("pdf");
 
   // Service instances (refs to persist across renders)
   const pdfRendererRef = useRef<PDFRenderer>(new PDFRenderer());
@@ -196,7 +195,7 @@ export default function IndexPage() {
     setEnabledDetections(new Set());
     setMode(InteractionMode.VIEW);
     setManualOnlyMode(false);
-    
+
     // Clear canvas
     if (canvasControllerRef.current) {
       canvasControllerRef.current.clearPageCache();
@@ -206,7 +205,7 @@ export default function IndexPage() {
   // Handle canvas ready
   const handleCanvasReady = useCallback((canvas: HTMLCanvasElement) => {
     canvasRef.current = canvas;
-    
+
     // Don't create a new controller if one already exists
     if (!canvasControllerRef.current) {
       canvasControllerRef.current = new CanvasController();
@@ -233,7 +232,7 @@ export default function IndexPage() {
 
         // Update redaction regions for current page
         const regions = getRegionsForPage(currentPage);
-        
+
         // Update redaction manager and apply solid black redactions
         redactionManagerRef.current.clearAllRegions();
         regions.forEach((region) => {
@@ -359,7 +358,7 @@ export default function IndexPage() {
 
   // Handle export
   const handleExport = useCallback(
-    async (format: "pdf" | "png") => {
+    async (format: "pdf" | "png" = exportFormat) => {
       if (!document || !canvasRef.current) return;
 
       startProcessing("loading", "Preparing export...");
@@ -417,7 +416,7 @@ export default function IndexPage() {
       updateProgress,
       completeProcessing,
       errorProcessing,
-      handleExportError,
+      handleExportError, exportFormat
     ],
   );
 
@@ -426,7 +425,7 @@ export default function IndexPage() {
     (detectionId: string, enabled: boolean) => {
       const detectionIndex = Number.parseInt(detectionId.split('-').pop() || '0');
       const detection = piiDetections[detectionIndex];
-      
+
       if (!detection) return;
 
       setEnabledDetections((prev) => {
@@ -447,19 +446,19 @@ export default function IndexPage() {
         // Since we can't match by detection ID, we need to remove by position/type
         const regions = getRegionsForPage(currentPage);
         const bbox = detection.words[0]?.bbox;
-        
+
         // Find and remove the region that matches this detection's position
-        const matchingRegion = regions.find(r => 
-          Math.abs(r.x - (bbox?.x0 || 0)) < 5 && 
+        const matchingRegion = regions.find(r =>
+          Math.abs(r.x - (bbox?.x0 || 0)) < 5 &&
           Math.abs(r.y - (bbox?.y0 || 0)) < 5 &&
           r.piiType === detection.type
         );
-        
+
         if (matchingRegion) {
           removeRegion(currentPage, matchingRegion.id);
         }
       }
-      
+
       // Trigger re-render to update canvas
       setRenderTrigger(prev => prev + 1);
     },
@@ -556,7 +555,7 @@ export default function IndexPage() {
   }, [document, currentPage, mode, goToPage, removeRegion, selectRegion]);
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-full w-full flex flex-col overflow-hidden">
       {/* Processing Status Overlay */}
       {isProcessing && <ProcessingStatus status={processingStatus} />}
 
@@ -569,71 +568,86 @@ export default function IndexPage() {
           />
         </div>
       ) : (
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Toolbar */}
-          <RedactionToolbar
-            mode={mode}
-            onModeChange={setMode}
-            onDetectPII={handleDetectPII}
-            onClearAll={() => {
-              clearAllRegions(currentPage);
-              // Also clear from canvas controller
-              if (canvasControllerRef.current) {
-                canvasControllerRef.current.clearRegions();
-              }
-              setRenderTrigger(prev => prev + 1); // Trigger re-render
-            }}
-            onUploadNew={handleUploadNew}
-            isProcessing={isProcessing}
-            hasDocument={!!document}
-            manualOnlyMode={manualOnlyMode}
-          />
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left | Center | Right */}
+          <div className="flex-1 grid overflow-hidden" style={{ gridTemplateColumns: "240px 1fr 320px" }}>
+            {/* Left rail */}
+            <LeftRail
+              mode={mode}
+              onModeChange={setMode}
+              onClearAll={() => {
+                clearAllRegions(currentPage);
+                if (canvasControllerRef.current) {
+                  canvasControllerRef.current.clearRegions();
+                }
+                setRenderTrigger((prev) => prev + 1);
+              }}
+              onUploadNew={handleUploadNew}
+              isProcessing={isProcessing}
+              hasDocument={!!document}
+              manualOnlyMode={manualOnlyMode}
+            />
 
-          {/* Main Workspace */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* Canvas Viewer */}
-            <div className="flex-1 flex flex-col">
-              <CanvasViewer
-                canvasController={canvasControllerRef.current}
-                onCanvasReady={handleCanvasReady}
-              />
-
-              {/* Page Navigator */}
-              {document.pageCount > 1 && (
-                <PageNavigator
-                  currentPage={currentPage}
-                  totalPages={document.pageCount}
-                  onPageChange={goToPage}
+            {/* Canvas center */}
+            <div className="overflow-hidden flex flex-col">
+              <div className="flex-1 flex flex-col">
+                <CanvasViewer
+                  canvasController={canvasControllerRef.current}
+                  onCanvasReady={handleCanvasReady}
                 />
+              </div>
+              {/* Page Navigator at bottom of canvas */}
+              {document && document.pageCount > 1 && (
+                <div className="border-t border-default-200 bg-default-50/70 backdrop-blur p-3">
+                  <div className="flex items-center justify-center gap-2">
+                    <Button size="sm" variant="flat" onPress={() => goToPage(currentPage - 1)} isDisabled={currentPage <= 1} aria-label="Previous page">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </Button>
+                    <div className="text-sm font-medium" aria-live="polite">
+                      Page {currentPage} of {document.pageCount}
+                    </div>
+                    <Button size="sm" variant="flat" onPress={() => goToPage(currentPage + 1)} isDisabled={currentPage >= document.pageCount} aria-label="Next page">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
 
-            {/* Right Sidebar */}
-            <div className="flex flex-col w-80 border-l border-default-200">
-              {/* PII List Panel */}
-              <div className="flex-1 overflow-hidden">
-                <PIIListPanel
-                  detections={piiDetections}
-                  enabledDetections={enabledDetections}
-                  onToggleDetection={handleToggleDetection}
-                  onHighlightDetection={handleHighlightDetection}
-                />
-              </div>
-
-              {/* Export Panel */}
-              <ExportPanel
-                onExport={handleExport}
-                hasDocument={!!document}
-                hasRedactions={getRegionsForPage(currentPage).length > 0}
-                documentType={document.type}
-              />
-            </div>
+            {/* Right panel tabs */}
+            <RightPanel
+              detections={piiDetections}
+              enabledDetections={enabledDetections}
+              onToggleDetection={handleToggleDetection}
+              onHighlightDetection={handleHighlightDetection}
+              getRegionsForPage={getRegionsForPage}
+              currentPage={currentPage}
+              onRemoveRegion={(page, id) => removeRegion(page, id)}
+              exportFormat={exportFormat}
+              onChangeExportFormat={setExportFormat}
+            />
           </div>
         </div>
       )}
 
-      {/* Error Toasts */}
-      <ToastContainer errors={errors} onDismiss={dismissError} />
+
+
+      
+      {/* Fixed bottom action bar */}
+      {document && (
+        <BottomDock
+          hasDocument={!!document}
+          isProcessing={isProcessing}
+          statusText={processingStatus.message}
+          onDetectPII={handleDetectPII}
+          onExport={() => handleExport()}
+          hasRedactions={getRegionsForPage(currentPage).length > 0}
+        />
+      )}
     </div>
   );
 }
