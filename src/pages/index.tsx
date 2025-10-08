@@ -1,11 +1,11 @@
+import { Button } from "@heroui/button";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BottomDock } from "@/components/BottomDock";
 import { CanvasViewer } from "@/components/CanvasViewer";
 import { DocumentUpload } from "@/components/DocumentUpload";
-import { ProcessingStatus } from "@/components/ProcessingStatus";
-
 import { LeftRail } from "@/components/LeftRail";
+import { ProcessingStatus } from "@/components/ProcessingStatus";
 import { RightPanel } from "@/components/RightPanel";
-import { BottomDock } from "@/components/BottomDock";
 import { useDocument, useErrors, useProcessing, useRedactions } from "@/hooks";
 import {
   CanvasController,
@@ -24,11 +24,11 @@ import {
   PIIType,
 } from "@/types/redaction";
 import { downloadCanvasAsScreenshot } from "@/utils/screenshot";
-import { Button } from "@heroui/button";
 
 export default function IndexPage() {
   // Hooks
-  const { document, currentPage, loadDocument, clearDocument, goToPage } = useDocument();
+  const { document, currentPage, loadDocument, clearDocument, goToPage } =
+    useDocument();
 
   const {
     addAutoDetectedRegions,
@@ -116,23 +116,27 @@ export default function IndexPage() {
       // Enable manual drawing mode
       canvasControllerRef.current.enableManualDrawing((region) => {
         // Add the manually drawn region to the redaction manager
-        addAutoDetectedRegions(currentPage, [{
-          text: "Manual Redaction",
-          type: PIIType.OTHER,
-          confidence: 100,
-          startIndex: 0,
-          endIndex: 0,
-          words: [{
-            text: "",
-            bbox: {
-              x0: region.x,
-              y0: region.y,
-              x1: region.x + region.width,
-              y1: region.y + region.height,
-            },
+        addAutoDetectedRegions(currentPage, [
+          {
+            text: "Manual Redaction",
+            type: PIIType.OTHER,
             confidence: 100,
-          }],
-        }]);
+            startIndex: 0,
+            endIndex: 0,
+            words: [
+              {
+                text: "",
+                bbox: {
+                  x0: region.x,
+                  y0: region.y,
+                  x1: region.x + region.width,
+                  y1: region.y + region.height,
+                },
+                confidence: 100,
+              },
+            ],
+          },
+        ]);
       });
     } else {
       // Disable manual drawing mode
@@ -216,7 +220,8 @@ export default function IndexPage() {
   // Render current page
   useEffect(() => {
     const renderPage = async () => {
-      if (!document || !canvasControllerRef.current || !canvasRef.current) return;
+      if (!document || !canvasControllerRef.current || !canvasRef.current)
+        return;
 
       try {
         // Render the actual document content first
@@ -224,7 +229,7 @@ export default function IndexPage() {
           await pdfRendererRef.current.renderPage(
             currentPage,
             canvasRef.current,
-            1.0
+            1.0,
           );
         } else {
           await imageRendererRef.current.renderImage(canvasRef.current, 1.0);
@@ -416,14 +421,18 @@ export default function IndexPage() {
       updateProgress,
       completeProcessing,
       errorProcessing,
-      handleExportError, exportFormat
+      handleExportError,
+      exportFormat,
     ],
   );
 
   // Handle PII detection toggle
   const handleToggleDetection = useCallback(
     (detectionId: string, enabled: boolean) => {
-      const detectionIndex = Number.parseInt(detectionId.split('-').pop() || '0');
+      const detectionIndex = Number.parseInt(
+        detectionId.split("-").pop() || "0",
+        10,
+      );
       const detection = piiDetections[detectionIndex];
 
       if (!detection) return;
@@ -448,10 +457,11 @@ export default function IndexPage() {
         const bbox = detection.words[0]?.bbox;
 
         // Find and remove the region that matches this detection's position
-        const matchingRegion = regions.find(r =>
-          Math.abs(r.x - (bbox?.x0 || 0)) < 5 &&
-          Math.abs(r.y - (bbox?.y0 || 0)) < 5 &&
-          r.piiType === detection.type
+        const matchingRegion = regions.find(
+          (r) =>
+            Math.abs(r.x - (bbox?.x0 || 0)) < 5 &&
+            Math.abs(r.y - (bbox?.y0 || 0)) < 5 &&
+            r.piiType === detection.type,
         );
 
         if (matchingRegion) {
@@ -460,9 +470,15 @@ export default function IndexPage() {
       }
 
       // Trigger re-render to update canvas
-      setRenderTrigger(prev => prev + 1);
+      setRenderTrigger((prev) => prev + 1);
     },
-    [currentPage, removeRegion, piiDetections, addAutoDetectedRegions, getRegionsForPage],
+    [
+      currentPage,
+      removeRegion,
+      piiDetections,
+      addAutoDetectedRegions,
+      getRegionsForPage,
+    ],
   );
 
   // Handle region highlight
@@ -570,7 +586,10 @@ export default function IndexPage() {
       ) : (
         <div className="flex-1 flex overflow-hidden">
           {/* Left | Center | Right */}
-          <div className="flex-1 grid overflow-hidden" style={{ gridTemplateColumns: "240px 1fr 320px" }}>
+          <div
+            className="flex-1 grid overflow-hidden"
+            style={{ gridTemplateColumns: "240px 1fr 320px" }}
+          >
             {/* Left rail */}
             <LeftRail
               mode={mode}
@@ -600,17 +619,51 @@ export default function IndexPage() {
               {document && document.pageCount > 1 && (
                 <div className="border-t border-default-200 bg-default-50/70 backdrop-blur p-3">
                   <div className="flex items-center justify-center gap-2">
-                    <Button size="sm" variant="flat" onPress={() => goToPage(currentPage - 1)} isDisabled={currentPage <= 1} aria-label="Previous page">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      onPress={() => goToPage(currentPage - 1)}
+                      isDisabled={currentPage <= 1}
+                      aria-label="Previous page"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
                       </svg>
                     </Button>
                     <div className="text-sm font-medium" aria-live="polite">
                       Page {currentPage} of {document.pageCount}
                     </div>
-                    <Button size="sm" variant="flat" onPress={() => goToPage(currentPage + 1)} isDisabled={currentPage >= document.pageCount} aria-label="Next page">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      onPress={() => goToPage(currentPage + 1)}
+                      isDisabled={currentPage >= document.pageCount}
+                      aria-label="Next page"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
                       </svg>
                     </Button>
                   </div>
@@ -634,9 +687,6 @@ export default function IndexPage() {
         </div>
       )}
 
-
-
-      
       {/* Fixed bottom action bar */}
       {document && (
         <BottomDock

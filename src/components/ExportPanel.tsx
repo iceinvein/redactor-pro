@@ -6,14 +6,12 @@ interface ExportPanelProps {
   onExport: (format: "pdf" | "png") => Promise<void>;
   hasDocument?: boolean;
   hasRedactions?: boolean;
-  documentType?: "pdf" | "image";
 }
 
 export const ExportPanel = ({
   onExport,
   hasDocument = false,
   hasRedactions = false,
-  documentType,
 }: ExportPanelProps) => {
   const [selectedFormat, setSelectedFormat] = useState<"pdf" | "png">("pdf");
   const [isExporting, setIsExporting] = useState(false);
@@ -157,7 +155,9 @@ export const ExportPanel = ({
               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
             />
           </svg>
-          <span className="ml-2">{isExporting ? "Exporting..." : "Export"}</span>
+          <span className="ml-2">
+            {isExporting ? "Exporting..." : "Export"}
+          </span>
         </Button>
       </motion.div>
 

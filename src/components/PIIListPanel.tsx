@@ -154,7 +154,9 @@ export const PIIListPanel = ({
                             className="flex items-center gap-2 text-xs"
                             aria-hidden="true"
                           >
-                            <span className="text-default-500">Confidence:</span>
+                            <span className="text-default-500">
+                              Confidence:
+                            </span>
                             <span
                               className={`font-semibold ${getConfidenceColor(detection.confidence)}`}
                             >

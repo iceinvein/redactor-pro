@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import { ErrorBoundary, ToastProvider } from "@/components";
-import IndexPage from "@/pages/index";
 import DefaultLayout from "@/layouts/default";
+import IndexPage from "@/pages/index";
 
 function App() {
   return (

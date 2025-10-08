@@ -50,7 +50,11 @@ export class OCREngineWorker implements OCREngine {
 
         // Wait for initialization to complete
         const initTimeout = setTimeout(() => {
-          reject(new Error("OCR worker initialization timeout - language data download may have failed"));
+          reject(
+            new Error(
+              "OCR worker initialization timeout - language data download may have failed",
+            ),
+          );
         }, 120000); // 120 second timeout for initialization (language download can be slow)
 
         const originalCallback = this.progressCallback;

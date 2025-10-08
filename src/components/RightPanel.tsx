@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
 import { Button, ButtonGroup } from "@heroui/button";
+import { useMemo, useState } from "react";
 import { PIIListPanel } from "@/components/PIIListPanel";
 import type { PIIDetection, RedactionRegion } from "@/types/redaction";
 
@@ -27,9 +27,14 @@ export const RightPanel = ({
   exportFormat,
   onChangeExportFormat,
 }: RightPanelProps) => {
-  const [tab, setTab] = useState<"detections" | "layers" | "history" | "settings">("detections");
+  const [tab, setTab] = useState<
+    "detections" | "layers" | "history" | "settings"
+  >("detections");
 
-  const regions = useMemo(() => getRegionsForPage(currentPage), [getRegionsForPage, currentPage]);
+  const regions = useMemo(
+    () => getRegionsForPage(currentPage),
+    [getRegionsForPage, currentPage],
+  );
 
   return (
     <aside className="border-l border-default-200 bg-default-50/70 backdrop-blur supports-[backdrop-filter]:bg-default-50/50 flex flex-col overflow-hidden">
@@ -60,7 +65,7 @@ export const RightPanel = ({
           <Button
             variant={tab === "settings" ? "solid" : "flat"}
             color={tab === "settings" ? "primary" : "default"}
-            onPress={() => setTab("settings" as any)}
+            onPress={() => setTab("settings")}
           >
             Settings
           </Button>
@@ -80,20 +85,37 @@ export const RightPanel = ({
         {tab === "layers" && (
           <section aria-label="Layers panel" className="p-3">
             <header className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold">Layers (Page {currentPage})</h3>
-              <span className="text-xs text-default-500">{regions.length} region{regions.length === 1 ? "" : "s"}</span>
+              <h3 className="text-sm font-semibold">
+                Layers (Page {currentPage})
+              </h3>
+              <span className="text-xs text-default-500">
+                {regions.length} region{regions.length === 1 ? "" : "s"}
+              </span>
             </header>
             {regions.length === 0 ? (
               <p className="text-sm text-default-500">No regions yet.</p>
             ) : (
               <ul className="space-y-2">
                 {regions.map((r) => (
-                  <li key={r.id} className="flex items-center justify-between rounded-md border border-default-200 bg-white/60 dark:bg-default-100/60 p-2">
+                  <li
+                    key={r.id}
+                    className="flex items-center justify-between rounded-md border border-default-200 bg-white/60 dark:bg-default-100/60 p-2"
+                  >
                     <div className="text-xs">
-                      <div className="font-mono text-default-800 dark:text-default-200">{r.piiType ?? "manual"}</div>
-                      <div className="text-default-500">x:{Math.round(r.x)} y:{Math.round(r.y)} w:{Math.round(r.width)} h:{Math.round(r.height)}</div>
+                      <div className="font-mono text-default-800 dark:text-default-200">
+                        {r.piiType ?? "manual"}
+                      </div>
+                      <div className="text-default-500">
+                        x:{Math.round(r.x)} y:{Math.round(r.y)} w:
+                        {Math.round(r.width)} h:{Math.round(r.height)}
+                      </div>
                     </div>
-                    <Button size="sm" variant="flat" color="danger" onPress={() => onRemoveRegion(currentPage, r.id)}>
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      color="danger"
+                      onPress={() => onRemoveRegion(currentPage, r.id)}
+                    >
                       Remove
                     </Button>
                   </li>

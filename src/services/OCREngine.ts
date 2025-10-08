@@ -21,8 +21,11 @@ export class OCREngineImpl implements OCREngine {
 
     try {
       this.updateProgress(0, "Creating OCR worker...");
-      this.updateProgress(30, "Downloading language data (~4MB, first time only)...");
-      
+      this.updateProgress(
+        30,
+        "Downloading language data (~4MB, first time only)...",
+      );
+
       this.worker = await createWorker("eng", 1, {
         errorHandler: (err: Error) => {
           console.error("[OCR] Tesseract error:", err);
@@ -69,31 +72,35 @@ export class OCREngineImpl implements OCREngine {
       // Use OffscreenCanvas which is available in workers
       const canvas = new OffscreenCanvas(imageData.width, imageData.height);
       const ctx = canvas.getContext("2d");
-      
+
       if (!ctx) {
         throw new Error("Failed to create OffscreenCanvas context");
       }
-      
+
       ctx.putImageData(imageData, 0, 0);
 
       // Perform OCR recognition with word-level data
       await this.worker.setParameters({
-        tessedit_pageseg_mode: '1', // Auto page segmentation with OSD
+        tessedit_pageseg_mode: "1", // Auto page segmentation with OSD
       });
-      
-      const result = await this.worker.recognize(canvas, {}, {
-        text: true,
-        blocks: true,
-        hocr: false,
-        tsv: false,
-      });
-      
+
+      const result = await this.worker.recognize(
+        canvas,
+        {},
+        {
+          text: true,
+          blocks: true,
+          hocr: false,
+          tsv: false,
+        },
+      );
+
       if (!result || !result.data) {
         throw new Error("OCR recognition returned invalid result");
       }
 
       const words: OCRWord[] = [];
-      
+
       // Extract words from blocks structure (Tesseract v6 format)
       if (result.data.blocks && Array.isArray(result.data.blocks)) {
         for (const block of result.data.blocks) {
