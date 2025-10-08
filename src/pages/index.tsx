@@ -161,8 +161,10 @@ export default function IndexPage() {
           const pageCount = pdfRendererRef.current.getPageCount();
           doc.pageCount = pageCount;
         } else {
-          const file = new File([doc.data as ArrayBuffer], doc.name);
-          await imageRendererRef.current.loadImage(file);
+          // For images, data is already a data URL string
+          await imageRendererRef.current.loadImageFromDataURL(
+            doc.data as string,
+          );
         }
 
         loadDocument(doc);

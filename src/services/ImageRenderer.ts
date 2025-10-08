@@ -45,6 +45,27 @@ export class ImageRenderer implements IImageRenderer {
   }
 
   /**
+   * Load an image from a data URL string
+   * @param dataUrl - Data URL string
+   */
+  async loadImageFromDataURL(dataUrl: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+
+      img.onload = () => {
+        this.image = img;
+        resolve();
+      };
+
+      img.onerror = () => {
+        reject(new Error("Failed to load image from data URL"));
+      };
+
+      img.src = dataUrl;
+    });
+  }
+
+  /**
    * Render the loaded image to a canvas with scaling support
    * @param canvas - Target canvas element
    * @param scale - Zoom scale factor
