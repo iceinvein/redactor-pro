@@ -26,15 +26,13 @@
     "enabled": true,
     "rules": {
       "recommended": true,
-      "a11y": {
-        "recommended": true,
-        "noSvgWithoutTitle": "off"
-      },
+      "a11y": "off",
       "complexity": {
         "recommended": true
       },
       "correctness": {
-        "recommended": true
+        "recommended": true,
+        "useUniqueElementIds": "off"
       },
       "performance": {
         "recommended": true

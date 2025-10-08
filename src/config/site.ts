@@ -1,14 +1,12 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: "My App",
-  description: "My application built with Vite and HeroUI",
-  navItems: [
-    {
-      label: "Home",
-      href: "/",
-    },
-  ],
+  name: "Redactor Pro",
+  description:
+    "Privacy-first document redaction tool with automatic PII detection. Process PDFs and images locally in your browser - no data ever leaves your device.",
+  navItems: [],
   navMenuItems: [],
-  links: {},
+  links: {
+    github: "https://github.com/yourusername/redactor-pro",
+  },
 };

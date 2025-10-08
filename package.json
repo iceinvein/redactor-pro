@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "lint": "biome check --write .",
     "format": "biome format --write .",
-    "check": "biome check .",
+    "check": "biome check --write .",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -26,26 +26,30 @@
     "@heroui/use-theme": "2.1.10",
     "@react-aria/visually-hidden": "3.8.28",
     "@react-types/shared": "3.32.1",
-    "@tailwindcss/postcss": "4.1.11",
-    "@tailwindcss/vite": "4.1.11",
+    "@tailwindcss/postcss": "4.1.14",
+    "@tailwindcss/vite": "4.1.14",
     "clsx": "2.1.1",
-    "framer-motion": "11.18.2",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-router-dom": "6.23.0",
+    "framer-motion": "12.23.22",
+    "jspdf": "^3.0.3",
+    "onnxruntime-web": "^1.23.0",
+    "pdfjs-dist": "^5.4.296",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-router-dom": "7.9.3",
     "tailwind-variants": "3.1.1",
-    "tailwindcss": "4.1.11"
+    "tailwindcss": "4.1.14",
+    "tesseract.js": "^6.0.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.5",
-    "@types/node": "20.5.7",
-    "@types/react": "18.3.3",
-    "@types/react-dom": "18.3.0",
-    "@vitejs/plugin-react": "4.7.0",
+    "@types/node": "24.7.0",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.1",
+    "@vitejs/plugin-react": "5.0.4",
     "postcss": "8.5.6",
-    "typescript": "5.6.3",
-    "vite": "6.0.11",
+    "typescript": "5.9.3",
+    "vite": "7.1.9",
     "vite-tsconfig-paths": "5.1.4"
   },
-  "packageManager": "pnpm@10.18.0+sha512.e804f889f1cecc40d572db084eec3e4881739f8dec69c0ff10d2d1beff9a4e309383ba27b5b750059d7f4c149535b6cd0d2cb1ed3aeb739239a4284a68f40cfa"
+  "packageManager": "pnpm@10.18.1"
 }

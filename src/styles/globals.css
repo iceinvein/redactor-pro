@@ -1,3 +1,62 @@
 @import "tailwindcss";
+@config "../../tailwind.config.js";
 
-@config "../../tailwind.config.js"
+/* Canvas Viewer Styles */
+.canvas-container {
+  cursor: default;
+}
+
+.canvas-container.panning {
+  cursor: grabbing;
+}
+
+.canvas-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100%;
+  min-height: 100%;
+  padding: 2rem;
+  transition: transform 0.1s ease-out;
+}
+
+.canvas-wrapper canvas {
+  transform-origin: center center;
+  transition: transform 0.1s ease-out;
+}
+
+.canvas-wrapper.no-transition {
+  transition: none;
+}
+
+.canvas-wrapper.no-transition canvas {
+  transition: none;
+}
+
+/* Focus indicators for accessibility */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid hsl(var(--heroui-primary));
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+/* Export progress bar animation */
+.export-progress-bar {
+  width: var(--progress-width, 0%);
+}
+
+/* Screen reader only utility class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
