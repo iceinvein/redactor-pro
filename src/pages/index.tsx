@@ -1,9 +1,9 @@
 import { Button } from "@heroui/button";
 import {
   Modal,
+  ModalBody,
   ModalContent,
   ModalHeader,
-  ModalBody,
   useDisclosure,
 } from "@heroui/modal";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,7 +14,13 @@ import { LeftRail } from "@/components/LeftRail";
 import { MobileToolbar } from "@/components/MobileToolbar";
 import { ProcessingStatus } from "@/components/ProcessingStatus";
 import { RightPanel } from "@/components/RightPanel";
-import { useDocument, useErrors, useProcessing, useRedactions } from "@/hooks";
+import {
+  useDocument,
+  useErrors,
+  useHistory,
+  useProcessing,
+  useRedactions,
+} from "@/hooks";
 import {
   CanvasController,
   ExportService,
@@ -27,6 +33,7 @@ import {
 import {
   type Document,
   DocumentType,
+  HistoryActionType,
   InteractionMode,
   type PIIDetection,
   PIIType,
@@ -64,6 +71,8 @@ export default function IndexPage() {
     handleCanvasError,
   } = useErrors();
 
+  const { history, addEntry, clearHistory } = useHistory();
+
   // Local state
   const [mode, setMode] = useState<InteractionMode>(InteractionMode.VIEW);
   const [piiDetections, setPiiDetections] = useState<PIIDetection[]>([]);
@@ -74,7 +83,7 @@ export default function IndexPage() {
   const [_renderTrigger, setRenderTrigger] = useState(0);
   const [exportFormat, setExportFormat] = useState<"pdf" | "png">("pdf");
   const [hasRunDetection, setHasRunDetection] = useState(false);
-  
+
   // Mobile modal control using HeroUI's useDisclosure hook (right panel only)
   const {
     isOpen: isRightModalOpen,
@@ -165,12 +174,19 @@ export default function IndexPage() {
             ],
           },
         ]);
+
+        // Track history
+        addEntry(
+          HistoryActionType.MANUAL_REDACTION_ADDED,
+          "Added manual redaction",
+          { page: currentPage },
+        );
       });
     } else {
       // Disable manual drawing mode
       canvasControllerRef.current.disableManualDrawing();
     }
-  }, [mode, currentPage, addAutoDetectedRegions]);
+  }, [mode, currentPage, addAutoDetectedRegions, addEntry]);
 
   // Handle document upload
   const handleDocumentLoad = useCallback(
@@ -203,6 +219,11 @@ export default function IndexPage() {
         setManualOnlyMode(false);
         setHasRunDetection(false);
 
+        // Track history
+        addEntry(HistoryActionType.DOCUMENT_UPLOADED, `Uploaded ${doc.name}`, {
+          count: doc.pageCount,
+        });
+
         completeProcessing("Document loaded successfully");
       } catch (err) {
         const message =
@@ -214,6 +235,7 @@ export default function IndexPage() {
     [
       loadDocument,
       clearAllRegions,
+      addEntry,
       startProcessing,
       completeProcessing,
       errorProcessing,
@@ -231,12 +253,13 @@ export default function IndexPage() {
     setMode(InteractionMode.VIEW);
     setManualOnlyMode(false);
     setHasRunDetection(false);
+    clearHistory();
 
     // Clear canvas
     if (canvasControllerRef.current) {
       canvasControllerRef.current.clearPageCache();
     }
-  }, [clearDocument, clearAllRegions]);
+  }, [clearDocument, clearAllRegions, clearHistory]);
 
   // Handle canvas ready
   const handleCanvasReady = useCallback((canvas: HTMLCanvasElement) => {
@@ -306,7 +329,8 @@ export default function IndexPage() {
     };
 
     renderPage();
-  }, [document, currentPage, getRegionsForPage, handleCanvasError, _renderTrigger]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [document, currentPage, getRegionsForPage, handleCanvasError]);
 
   // Handle PII detection
   const handleDetectPII = useCallback(async () => {
@@ -364,6 +388,13 @@ export default function IndexPage() {
       // Add redaction regions
       addAutoDetectedRegions(currentPage, detections);
 
+      // Track history
+      addEntry(
+        HistoryActionType.PII_DETECTION_RUN,
+        `Detected ${detections.length} PII item${detections.length !== 1 ? "s" : ""}`,
+        { page: currentPage, count: detections.length },
+      );
+
       completeProcessing(`Found ${detections.length} PII items`);
       setMode(InteractionMode.REVIEW);
       setHasRunDetection(true);
@@ -392,6 +423,7 @@ export default function IndexPage() {
     document,
     currentPage,
     addAutoDetectedRegions,
+    addEntry,
     startProcessing,
     updateProgress,
     updateStage,
@@ -436,6 +468,13 @@ export default function IndexPage() {
           );
         }
 
+        // Track history
+        addEntry(
+          HistoryActionType.EXPORT_COMPLETED,
+          `Exported as ${format.toUpperCase()}`,
+          { format, count: regions.length },
+        );
+
         completeProcessing("Export complete");
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to export";
@@ -457,6 +496,7 @@ export default function IndexPage() {
       document,
       currentPage,
       getRegionsForPage,
+      addEntry,
       startProcessing,
       updateProgress,
       completeProcessing,
@@ -490,6 +530,11 @@ export default function IndexPage() {
       if (enabled) {
         // Add the detection back
         addAutoDetectedRegions(currentPage, [detection]);
+        addEntry(
+          HistoryActionType.DETECTION_TOGGLED,
+          `Enabled ${detection.type} detection`,
+          { page: currentPage, piiType: detection.type },
+        );
       } else {
         // Remove all regions for this detection
         // Since we can't match by detection ID, we need to remove by position/type
@@ -506,6 +551,11 @@ export default function IndexPage() {
 
         if (matchingRegion) {
           removeRegion(currentPage, matchingRegion.id);
+          addEntry(
+            HistoryActionType.DETECTION_TOGGLED,
+            `Disabled ${detection.type} detection`,
+            { page: currentPage, piiType: detection.type },
+          );
         }
       }
 
@@ -518,6 +568,7 @@ export default function IndexPage() {
       piiDetections,
       addAutoDetectedRegions,
       getRegionsForPage,
+      addEntry,
     ],
   );
 
@@ -536,7 +587,7 @@ export default function IndexPage() {
     [selectRegion],
   );
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts (page navigation only, delete is handled by CanvasController)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Ignore if user is typing in an input field
@@ -548,19 +599,6 @@ export default function IndexPage() {
       }
 
       switch (event.key) {
-        case "Delete":
-        case "Backspace": {
-          // Delete selected region
-          const highlightedId =
-            canvasControllerRef.current?.getHighlightedRegionId();
-
-          if (highlightedId) {
-            removeRegion(currentPage, highlightedId);
-            event.preventDefault();
-          }
-          break;
-        }
-
         case "ArrowLeft": {
           // Previous page
           if (document && currentPage > 1) {
@@ -579,25 +617,6 @@ export default function IndexPage() {
           break;
         }
 
-        case "Escape": {
-          // Cancel manual drawing or clear selection
-          if (
-            mode === InteractionMode.MANUAL_REDACT &&
-            canvasControllerRef.current
-          ) {
-            // Cancel any ongoing drawing
-            canvasControllerRef.current.disableManualDrawing();
-            canvasControllerRef.current.enableManualDrawing();
-            event.preventDefault();
-          }
-          // Clear highlight
-          if (canvasControllerRef.current) {
-            canvasControllerRef.current.clearHighlight();
-          }
-          selectRegion(null);
-          break;
-        }
-
         default:
           break;
       }
@@ -608,7 +627,7 @@ export default function IndexPage() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [document, currentPage, mode, goToPage, removeRegion, selectRegion]);
+  }, [document, currentPage, goToPage]);
 
   return (
     <>
@@ -629,9 +648,7 @@ export default function IndexPage() {
         }}
       >
         <ModalContent className="flex flex-col h-full">
-          <ModalHeader>
-            Panels
-          </ModalHeader>
+          <ModalHeader>Panels</ModalHeader>
           <ModalBody className="flex-1 overflow-hidden">
             <RightPanel
               detections={piiDetections}
@@ -641,6 +658,8 @@ export default function IndexPage() {
               getRegionsForPage={getRegionsForPage}
               currentPage={currentPage}
               onRemoveRegion={(page, id) => removeRegion(page, id)}
+              history={history}
+              onClearHistory={clearHistory}
               exportFormat={exportFormat}
               onChangeExportFormat={setExportFormat}
             />
@@ -661,7 +680,6 @@ export default function IndexPage() {
             />
           </div>
         ) : (
-
           <div className="flex-1 flex overflow-hidden pb-14 sm:pb-16">
             {/* Responsive Grid: single column on mobile, 3-column on desktop */}
             <div className="flex-1 grid overflow-hidden grid-cols-1 lg:grid-cols-[240px_1fr_380px]">
@@ -671,6 +689,7 @@ export default function IndexPage() {
                   mode={mode}
                   onModeChange={setMode}
                   onClearAll={() => {
+                    const count = getRegionsForPage(currentPage).length;
                     clearAllRegions(currentPage);
                     setPiiDetections([]);
                     setEnabledDetections(new Set());
@@ -678,6 +697,11 @@ export default function IndexPage() {
                     if (canvasControllerRef.current) {
                       canvasControllerRef.current.clearRegions();
                     }
+                    addEntry(
+                      HistoryActionType.PAGE_CLEARED,
+                      `Cleared ${count} redaction${count !== 1 ? "s" : ""} from page ${currentPage}`,
+                      { page: currentPage, count },
+                    );
                     setRenderTrigger((prev) => prev + 1);
                   }}
                   onUploadNew={handleUploadNew}
@@ -687,93 +711,102 @@ export default function IndexPage() {
                 />
               </div>
 
-            {/* Canvas center - full width on mobile */}
-            <div className="overflow-hidden flex flex-col">
-              {/* Mobile expandable toolbar */}
-              {document && (
-                <MobileToolbar
-                  mode={mode}
-                  onModeChange={setMode}
-                  onClearAll={() => {
-                    clearAllRegions(currentPage);
-                    setPiiDetections([]);
-                    setEnabledDetections(new Set());
-                    setHasRunDetection(false);
-                    if (canvasControllerRef.current) {
-                      canvasControllerRef.current.clearRegions();
-                    }
-                    setRenderTrigger((prev) => prev + 1);
-                  }}
-                  onUploadNew={handleUploadNew}
-                  isProcessing={isProcessing}
-                  hasDocument={!!document}
-                  manualOnlyMode={manualOnlyMode}
-                />
-              )}
-              
-              <div className="flex-1 flex flex-col">
-                <CanvasViewer
-                  canvasController={canvasControllerRef.current}
-                  onCanvasReady={handleCanvasReady}
-                  onOpenRightPanel={onOpenRightModal}
-                  showMobileRightButton={!!document}
-                />
-              </div>
-              {/* Page Navigator at bottom of canvas */}
-              {document && document.pageCount > 1 && (
-                <div className="border-t border-default-200 bg-default-50/80 dark:bg-default-100/80 p-2 sm:p-3">
-                  <div className="flex items-center justify-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="flat"
-                      onPress={() => goToPage(currentPage - 1)}
-                      isDisabled={currentPage <= 1}
-                      aria-label="Previous page"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 19l-7-7 7-7"
-                        />
-                      </svg>
-                    </Button>
-                    <div className="text-xs sm:text-sm font-medium" aria-live="polite">
-                      Page {currentPage} of {document.pageCount}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="flat"
-                      onPress={() => goToPage(currentPage + 1)}
-                      isDisabled={currentPage >= document.pageCount}
-                      aria-label="Next page"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </Button>
-                  </div>
+              {/* Canvas center - full width on mobile */}
+              <div className="overflow-hidden flex flex-col">
+                {/* Mobile expandable toolbar */}
+                {document && (
+                  <MobileToolbar
+                    mode={mode}
+                    onModeChange={setMode}
+                    onClearAll={() => {
+                      const count = getRegionsForPage(currentPage).length;
+                      clearAllRegions(currentPage);
+                      setPiiDetections([]);
+                      setEnabledDetections(new Set());
+                      setHasRunDetection(false);
+                      if (canvasControllerRef.current) {
+                        canvasControllerRef.current.clearRegions();
+                      }
+                      addEntry(
+                        HistoryActionType.PAGE_CLEARED,
+                        `Cleared ${count} redaction${count !== 1 ? "s" : ""} from page ${currentPage}`,
+                        { page: currentPage, count },
+                      );
+                      setRenderTrigger((prev) => prev + 1);
+                    }}
+                    onUploadNew={handleUploadNew}
+                    isProcessing={isProcessing}
+                    hasDocument={!!document}
+                    manualOnlyMode={manualOnlyMode}
+                  />
+                )}
+
+                <div className="flex-1 flex flex-col">
+                  <CanvasViewer
+                    canvasController={canvasControllerRef.current}
+                    onCanvasReady={handleCanvasReady}
+                    onOpenRightPanel={onOpenRightModal}
+                    showMobileRightButton={!!document}
+                  />
                 </div>
-              )}
-            </div>
+                {/* Page Navigator at bottom of canvas */}
+                {document && document.pageCount > 1 && (
+                  <div className="border-t border-default-200 bg-default-50/80 dark:bg-default-100/80 p-2 sm:p-3">
+                    <div className="flex items-center justify-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        onPress={() => goToPage(currentPage - 1)}
+                        isDisabled={currentPage <= 1}
+                        aria-label="Previous page"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 19l-7-7 7-7"
+                          />
+                        </svg>
+                      </Button>
+                      <div
+                        className="text-xs sm:text-sm font-medium"
+                        aria-live="polite"
+                      >
+                        Page {currentPage} of {document.pageCount}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        onPress={() => goToPage(currentPage + 1)}
+                        isDisabled={currentPage >= document.pageCount}
+                        aria-label="Next page"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Right panel tabs - hidden on mobile, visible on desktop */}
               <div className="hidden lg:block">
@@ -785,6 +818,8 @@ export default function IndexPage() {
                   getRegionsForPage={getRegionsForPage}
                   currentPage={currentPage}
                   onRemoveRegion={(page, id) => removeRegion(page, id)}
+                  history={history}
+                  onClearHistory={clearHistory}
                   exportFormat={exportFormat}
                   onChangeExportFormat={setExportFormat}
                 />

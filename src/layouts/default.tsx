@@ -31,9 +31,7 @@ export default function DefaultLayout({
 
       <Navbar {...navbarProps} />
 
-      <main className="flex-1 relative overflow-hidden">
-        {children}
-      </main>
+      <main className="flex-1 relative overflow-hidden">{children}</main>
     </div>
   );
 }

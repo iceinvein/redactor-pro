@@ -1,12 +1,17 @@
 import { Button } from "@heroui/button";
-import { Tabs, Tab } from "@heroui/tabs";
 import { Card, CardBody } from "@heroui/card";
-import { motion, AnimatePresence } from "framer-motion";
+import { Tab, Tabs } from "@heroui/tabs";
+import { AnimatePresence, motion } from "framer-motion";
+import { Eye, History, Layers, Settings as SettingsIcon } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Layers, History, Settings as SettingsIcon, Eye } from "lucide-react";
-import { PIIListPanel } from "@/components/PIIListPanel";
 import { EmptyState } from "@/components/EmptyState";
-import type { PIIDetection, RedactionRegion } from "@/types/redaction";
+import { HistoryPanel } from "@/components/HistoryPanel";
+import { PIIListPanel } from "@/components/PIIListPanel";
+import type {
+  HistoryEntry,
+  PIIDetection,
+  RedactionRegion,
+} from "@/types/redaction";
 
 interface RightPanelProps {
   detections: PIIDetection[];
@@ -16,6 +21,9 @@ interface RightPanelProps {
   getRegionsForPage: (page: number) => RedactionRegion[];
   currentPage: number;
   onRemoveRegion: (page: number, regionId: string) => void;
+  // History
+  history: HistoryEntry[];
+  onClearHistory: () => void;
   // Settings
   exportFormat: "pdf" | "png";
   onChangeExportFormat: (fmt: "pdf" | "png") => void;
@@ -29,6 +37,8 @@ export const RightPanel = ({
   getRegionsForPage,
   currentPage,
   onRemoveRegion,
+  history,
+  onClearHistory,
   exportFormat,
   onChangeExportFormat,
 }: RightPanelProps) => {
@@ -128,16 +138,16 @@ export const RightPanel = ({
               className="px-4 py-4"
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold">
-                  Layers
-                </h3>
+                <h3 className="text-lg font-bold">Layers</h3>
                 <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-default-100 text-xs font-medium">
                   <span className="text-default-500">Page {currentPage}</span>
                   <div className="w-px h-3 bg-divider" />
-                  <span className="text-primary">{regions.length} region{regions.length === 1 ? "" : "s"}</span>
+                  <span className="text-primary">
+                    {regions.length} region{regions.length === 1 ? "" : "s"}
+                  </span>
                 </div>
               </div>
-              
+
               {regions.length === 0 ? (
                 <EmptyState
                   icon="shield"
@@ -152,8 +162,10 @@ export const RightPanel = ({
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
+                      onMouseEnter={() => onHighlightDetection(r.id)}
+                      onMouseLeave={() => onHighlightDetection(null)}
                     >
-                      <Card className="bg-content2/50 backdrop-blur-sm border border-divider/50 hover:border-primary/50 transition-colors">
+                      <Card className="bg-content2/50 backdrop-blur-sm border border-divider/50 hover:border-primary/50 transition-colors cursor-pointer">
                         <CardBody className="p-3">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
@@ -164,8 +176,13 @@ export const RightPanel = ({
                                 </span>
                               </div>
                               <div className="text-xs text-default-500 font-mono space-y-0.5">
-                                <div>x: {Math.round(r.x)}, y: {Math.round(r.y)}</div>
-                                <div>w: {Math.round(r.width)}, h: {Math.round(r.height)}</div>
+                                <div>
+                                  x: {Math.round(r.x)}, y: {Math.round(r.y)}
+                                </div>
+                                <div>
+                                  w: {Math.round(r.width)}, h:{" "}
+                                  {Math.round(r.height)}
+                                </div>
                               </div>
                             </div>
                             <Button
@@ -195,14 +212,9 @@ export const RightPanel = ({
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
               aria-label="History panel"
-              className="px-4 py-4"
+              className="px-4 py-4 h-full"
             >
-              <h3 className="text-lg font-bold mb-4">History</h3>
-              <EmptyState
-                icon="search"
-                title="No history yet"
-                description="Your redaction history will appear here"
-              />
+              <HistoryPanel history={history} onClearHistory={onClearHistory} />
             </motion.section>
           )}
 
@@ -220,7 +232,9 @@ export const RightPanel = ({
                 <h3 className="text-lg font-bold mb-4">Export Settings</h3>
                 <Card className="bg-content2/50 backdrop-blur-sm border border-divider/50">
                   <CardBody className="p-4">
-                    <label className="block text-sm font-semibold mb-3">Export Format</label>
+                    <label className="block text-sm font-semibold mb-3">
+                      Export Format
+                    </label>
                     <div className="flex gap-3">
                       <Button
                         size="lg"

@@ -19,6 +19,9 @@ export class CanvasController implements ICanvasController {
   private currentDrawRegion: RedactionRegion | null = null;
   private onRegionCreated?: (region: RedactionRegion) => void;
 
+  // Selection state
+  private selectedRegionId: string | null = null;
+
   // Performance optimization: off-screen canvas and page cache
   private offscreenCanvas: HTMLCanvasElement | null = null;
   private offscreenCtx: CanvasRenderingContext2D | null = null;
@@ -182,14 +185,17 @@ export class CanvasController implements ICanvasController {
     if (!this.ctx) return;
 
     const transformedRegion = this.transformRegionToCanvas(region);
+    const isSelected = region.id === this.selectedRegionId;
 
     this.ctx.save();
 
     // Draw semi-transparent overlay with better contrast
-    // Using darker colors for better visibility and WCAG compliance
-    this.ctx.fillStyle = isHighlighted
-      ? "rgba(220, 38, 38, 0.5)" // Red-600 with 50% opacity for highlighted
-      : "rgba(0, 0, 0, 0.4)"; // Black with 40% opacity for normal
+    // Selected regions have blue tint, highlighted have red, normal are black
+    this.ctx.fillStyle = isSelected
+      ? "rgba(37, 99, 235, 0.5)" // Blue-600 for selected
+      : isHighlighted
+        ? "rgba(220, 38, 38, 0.5)" // Red-600 for highlighted
+        : "rgba(0, 0, 0, 0.4)"; // Black for normal
     this.ctx.fillRect(
       transformedRegion.x,
       transformedRegion.y,
@@ -198,8 +204,12 @@ export class CanvasController implements ICanvasController {
     );
 
     // Draw border with better contrast
-    this.ctx.strokeStyle = isHighlighted ? "#dc2626" : "#1f2937"; // Red-600 or Gray-800
-    this.ctx.lineWidth = isHighlighted ? 3 : 2;
+    this.ctx.strokeStyle = isSelected
+      ? "#2563eb" // Blue-600 for selected
+      : isHighlighted
+        ? "#dc2626" // Red-600 for highlighted
+        : "#1f2937"; // Gray-800 for normal
+    this.ctx.lineWidth = isSelected ? 3 : isHighlighted ? 3 : 2;
     this.ctx.strokeRect(
       transformedRegion.x,
       transformedRegion.y,
@@ -334,6 +344,15 @@ export class CanvasController implements ICanvasController {
     this.onRegionCreated = onRegionCreated;
   }
 
+  getSelectedRegionId(): string | null {
+    return this.selectedRegionId;
+  }
+
+  selectRegion(regionId: string | null): void {
+    this.selectedRegionId = regionId;
+    this.renderRedactionOverlays();
+  }
+
   disableManualDrawing(): void {
     this.onRegionCreated = undefined;
     this.cancelDrawing();
@@ -358,7 +377,8 @@ export class CanvasController implements ICanvasController {
   }
 
   private handleMouseDown = (event: MouseEvent): void => {
-    if (!this.onRegionCreated) return; // Only draw if manual drawing is enabled
+    // Only handle drawing, no region selection
+    if (!this.onRegionCreated) return;
 
     const point = this.getCanvasCoordinates(event.clientX, event.clientY);
 
@@ -379,22 +399,9 @@ export class CanvasController implements ICanvasController {
 
     const point = this.getCanvasCoordinates(event.clientX, event.clientY);
 
-    // Handle hover highlighting
+    // Only set cursor, no hover highlighting
     if (!this.isDrawing) {
-      const hoveredRegion = this.getRegionAtPoint(point);
-      if (hoveredRegion) {
-        this.canvas.style.cursor = "pointer";
-        if (this.highlightedRegionId !== hoveredRegion.id) {
-          this.highlightRegion(hoveredRegion.id);
-        }
-      } else {
-        this.canvas.style.cursor = this.onRegionCreated
-          ? "crosshair"
-          : "default";
-        if (this.highlightedRegionId) {
-          this.clearHighlight();
-        }
-      }
+      this.canvas.style.cursor = this.onRegionCreated ? "crosshair" : "default";
     }
 
     // Handle drawing
@@ -441,7 +448,6 @@ export class CanvasController implements ICanvasController {
     if (this.isDrawing) {
       this.cancelDrawing();
     }
-    this.clearHighlight();
   };
 
   private cancelDrawing(): void {

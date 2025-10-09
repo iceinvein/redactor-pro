@@ -1,6 +1,6 @@
 import { Button } from "@heroui/button";
-import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
 import { InteractionMode } from "@/types/redaction";
 
 interface MobileToolbarProps {

@@ -1,4 +1,8 @@
-import { createWorker, PSM, type Worker as TesseractWorker } from "tesseract.js";
+import {
+  createWorker,
+  PSM,
+  type Worker as TesseractWorker,
+} from "tesseract.js";
 import type { OCREngine, OCRResult, OCRWord } from "../types/redaction";
 
 /**

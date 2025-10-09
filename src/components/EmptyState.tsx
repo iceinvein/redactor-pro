@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { type ReactNode } from "react";
-import { FileSearch, Shield, File } from "lucide-react";
+import { File, FileSearch, type LucideIcon, Shield } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface EmptyStateProps {
   icon?: "file" | "search" | "shield" | ReactNode;
@@ -10,7 +10,7 @@ interface EmptyStateProps {
   variant?: "default" | "large";
 }
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, LucideIcon> = {
   file: File,
   search: FileSearch,
   shield: Shield,

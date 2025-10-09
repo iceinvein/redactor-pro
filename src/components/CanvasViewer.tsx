@@ -1,7 +1,7 @@
 import { Button } from "@heroui/button";
 import { motion } from "framer-motion";
+import { Maximize2, Settings, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ZoomIn, ZoomOut, Maximize2, Settings } from "lucide-react";
 import type { CanvasController } from "@/services/CanvasController";
 
 interface CanvasViewerProps {
@@ -182,7 +182,8 @@ export const CanvasViewer = ({
         className="hidden lg:block absolute top-4 right-4 z-30 text-xs text-default-600 bg-content1/60 backdrop-blur-xl rounded-xl px-3 py-2 shadow-lg border border-divider/50"
         role="note"
       >
-        <span className="font-medium">Tip:</span> Ctrl/Cmd + Scroll to zoom, Shift + Drag to pan
+        <span className="font-medium">Tip:</span> Ctrl/Cmd + Scroll to zoom,
+        Shift + Drag to pan
       </motion.div>
 
       {/* Canvas Container */}

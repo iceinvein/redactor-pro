@@ -1,7 +1,7 @@
 import { Button } from "@heroui/button";
 import { motion } from "framer-motion";
+import { Download, Scan } from "lucide-react";
 import { createPortal } from "react-dom";
-import { Scan, Download } from "lucide-react";
 
 interface BottomDockProps {
   hasDocument?: boolean;
@@ -37,9 +37,7 @@ export const BottomDock = ({
             <div className="flex items-center gap-2">
               <div
                 className={`w-2 h-2 rounded-full ${
-                  isProcessing
-                    ? "bg-primary animate-pulse"
-                    : "bg-success"
+                  isProcessing ? "bg-primary animate-pulse" : "bg-success"
                 }`}
               />
               <span
@@ -64,9 +62,11 @@ export const BottomDock = ({
               className="font-semibold"
               startContent={<Scan className="w-5 h-5" />}
             >
-              <span className="hidden sm:inline">{hasRunDetection ? "Already Detected" : "Detect PII"}</span>
+              <span className="hidden sm:inline">
+                {hasRunDetection ? "Already Detected" : "Detect PII"}
+              </span>
             </Button>
-            
+
             {/* Export Button */}
             <Button
               size="lg"

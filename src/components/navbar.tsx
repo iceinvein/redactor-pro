@@ -7,7 +7,7 @@ import {
   NavbarItem,
 } from "@heroui/navbar";
 import { motion } from "framer-motion";
-import { Shield, Menu, Layout } from "lucide-react";
+import { Layout, Menu, Shield } from "lucide-react";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { siteConfig } from "@/config/site";
 
@@ -47,7 +47,7 @@ export const Navbar = ({
             </Button>
           </NavbarItem>
         )}
-        
+
         <NavbarBrand className="gap-3">
           <motion.div
             whileHover={{ scale: 1.05 }}
@@ -74,7 +74,7 @@ export const Navbar = ({
                 {/* Subtle glow effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 blur-xl opacity-30" />
               </div>
-              
+
               {/* App Name */}
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5 sm:gap-2">
@@ -110,15 +110,17 @@ export const Navbar = ({
             </Button>
           </NavbarItem>
         )}
-        
+
         {/* Desktop Status Badge */}
         <NavbarItem className="hidden lg:flex">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/20">
             <Shield className="w-4 h-4 text-success" />
-            <span className="text-xs font-semibold text-success">100% Private</span>
+            <span className="text-xs font-semibold text-success">
+              100% Private
+            </span>
           </div>
         </NavbarItem>
-        
+
         <NavbarItem>
           <ThemeSwitch />
         </NavbarItem>

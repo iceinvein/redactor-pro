@@ -1,4 +1,4 @@
-import type { PDFDocumentProxy } from "pdfjs-dist";
+import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
 import * as pdfjsLib from "pdfjs-dist";
 import type {
   PDFRenderer as IPDFRenderer,
@@ -13,7 +13,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 
 export class PDFRenderer implements IPDFRenderer {
   private pdfDocument: PDFDocumentProxy | null = null;
-  private currentRenderTask: any = null;
+  private currentRenderTask: RenderTask | null = null;
 
   /**
    * Load a PDF document from an ArrayBuffer
@@ -64,7 +64,7 @@ export class PDFRenderer implements IPDFRenderer {
     if (this.currentRenderTask) {
       try {
         this.currentRenderTask.cancel();
-      } catch (e) {
+      } catch (_e) {
         // Ignore cancellation errors
       }
       this.currentRenderTask = null;
@@ -107,7 +107,7 @@ export class PDFRenderer implements IPDFRenderer {
     } catch (error) {
       this.currentRenderTask = null;
       // Don't throw error if it was just a cancellation
-      if (error instanceof Error && error.message.includes('cancel')) {
+      if (error instanceof Error && error.message.includes("cancel")) {
         return;
       }
       throw new Error(

@@ -200,3 +200,32 @@ export interface ExportService {
     format: "png" | "jpg",
   ): Promise<void>;
 }
+
+// History tracking
+
+export enum HistoryActionType {
+  DOCUMENT_UPLOADED = "document_uploaded",
+  PII_DETECTION_RUN = "pii_detection_run",
+  MANUAL_REDACTION_ADDED = "manual_redaction_added",
+  REDACTION_REMOVED = "redaction_removed",
+  DETECTION_TOGGLED = "detection_toggled",
+  EXPORT_COMPLETED = "export_completed",
+  MODE_CHANGED = "mode_changed",
+  PAGE_CLEARED = "page_cleared",
+  ALL_CLEARED = "all_cleared",
+}
+
+export interface HistoryEntry {
+  id: string;
+  timestamp: Date;
+  action: HistoryActionType;
+  description: string;
+  metadata?: {
+    page?: number;
+    count?: number;
+    format?: string;
+    mode?: InteractionMode;
+    piiType?: PIIType;
+    [key: string]: unknown;
+  };
+}

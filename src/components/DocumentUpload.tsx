@@ -1,8 +1,9 @@
 import { Button } from "@heroui/button";
-import { motion, AnimatePresence } from "framer-motion";
-import { useCallback, useState } from "react";
-import { Upload, FileText, Image as ImageIcon } from "lucide-react";
-import { type Document, DocumentType } from "@/types/redaction";
+import { AnimatePresence, motion } from "framer-motion";
+import { FileText, Image as ImageIcon, Upload } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { DocumentManager } from "@/services/DocumentManager";
+import type { Document } from "@/types/redaction";
 
 interface DocumentUploadProps {
   onDocumentLoad: (document: Document) => void;
@@ -23,6 +24,7 @@ export const DocumentUpload = ({
 }: DocumentUploadProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const documentManager = useMemo(() => new DocumentManager(), []);
 
   const validateFile = useCallback((file: File): string | null => {
     if (!ACCEPTED_FORMATS.includes(file.type)) {
@@ -44,20 +46,8 @@ export const DocumentUpload = ({
 
       setIsUploading(true);
       try {
-        const arrayBuffer = await file.arrayBuffer();
-        const documentType =
-          file.type === "application/pdf"
-            ? DocumentType.PDF
-            : DocumentType.IMAGE;
-
-        const document: Document = {
-          id: crypto.randomUUID(),
-          type: documentType,
-          name: file.name,
-          pageCount: documentType === DocumentType.PDF ? 0 : 1, // Will be updated by PDF renderer
-          data: arrayBuffer,
-        };
-
+        // Use DocumentManager to properly handle both PDFs and images
+        const document = await documentManager.loadDocument(file);
         onDocumentLoad(document);
       } catch (err) {
         onError(err instanceof Error ? err.message : "Failed to load document");
@@ -65,7 +55,7 @@ export const DocumentUpload = ({
         setIsUploading(false);
       }
     },
-    [onDocumentLoad, onError, validateFile],
+    [onDocumentLoad, onError, validateFile, documentManager],
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -122,7 +112,8 @@ export const DocumentUpload = ({
             Redact with Privacy
           </h2>
           <p className="text-default-500 text-base sm:text-lg">
-            Upload a document to automatically detect and redact sensitive information
+            Upload a document to automatically detect and redact sensitive
+            information
           </p>
         </div>
 
@@ -165,7 +156,11 @@ export const DocumentUpload = ({
                 >
                   <motion.div
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                    transition={{
+                      duration: 1,
+                      repeat: Number.POSITIVE_INFINITY,
+                      ease: "linear",
+                    }}
                   >
                     <Upload className="w-10 h-10 text-primary" />
                   </motion.div>
@@ -185,7 +180,11 @@ export const DocumentUpload = ({
 
             <div>
               <p className="text-xl sm:text-2xl font-bold mb-2">
-                {isUploading ? "Uploading..." : isDragging ? "Drop it here!" : "Drop your document here"}
+                {isUploading
+                  ? "Uploading..."
+                  : isDragging
+                    ? "Drop it here!"
+                    : "Drop your document here"}
               </p>
               <p className="text-sm sm:text-base text-default-500 mb-6">
                 or click to browse files
@@ -233,16 +232,30 @@ export const DocumentUpload = ({
             <span className="text-sm font-medium">PNG / JPG</span>
           </motion.div>
           <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-content2/80 backdrop-blur-sm">
-            <span className="text-sm font-medium text-default-500">Max 50MB</span>
+            <span className="text-sm font-medium text-default-500">
+              Max 50MB
+            </span>
           </div>
         </div>
 
         {/* Features */}
         <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { icon: "🔒", title: "100% Private", desc: "All processing happens locally" },
-            { icon: "⚡", title: "Fast & Smart", desc: "AI-powered PII detection" },
-            { icon: "✨", title: "Easy Export", desc: "Download as PDF or image" },
+            {
+              icon: "🔒",
+              title: "100% Private",
+              desc: "All processing happens locally",
+            },
+            {
+              icon: "⚡",
+              title: "Fast & Smart",
+              desc: "AI-powered PII detection",
+            },
+            {
+              icon: "✨",
+              title: "Easy Export",
+              desc: "Download as PDF or image",
+            },
           ].map((feature, i) => (
             <motion.div
               key={feature.title}

@@ -1,9 +1,19 @@
-import { Switch } from "@heroui/switch";
 import { Card, CardBody } from "@heroui/card";
+import { Switch } from "@heroui/switch";
 import { AnimatePresence, motion } from "framer-motion";
-import { Shield, Mail, Phone, CreditCard, Calendar, MapPin, User, FileText, type LucideIcon } from "lucide-react";
-import { type PIIDetection, PIIType } from "@/types/redaction";
+import {
+  Calendar,
+  CreditCard,
+  FileText,
+  type LucideIcon,
+  Mail,
+  MapPin,
+  Phone,
+  Shield,
+  User,
+} from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
+import { type PIIDetection, PIIType } from "@/types/redaction";
 
 interface PIIListPanelProps {
   detections: PIIDetection[];
@@ -155,8 +165,13 @@ export const PIIListPanel = ({
                                 <div className="h-1.5 bg-default-200 rounded-full overflow-hidden">
                                   <motion.div
                                     initial={{ width: 0 }}
-                                    animate={{ width: `${detection.confidence * 100}%` }}
-                                    transition={{ duration: 0.5, delay: index * 0.05 }}
+                                    animate={{
+                                      width: `${detection.confidence * 100}%`,
+                                    }}
+                                    transition={{
+                                      duration: 0.5,
+                                      delay: index * 0.05,
+                                    }}
                                     className={`h-full rounded-full ${
                                       detection.confidence >= 0.8
                                         ? "bg-success"
@@ -168,9 +183,9 @@ export const PIIListPanel = ({
                                 </div>
                               </div>
                               <span
-                                className={`text-xs font-bold shrink-0 ${
-                                  getConfidenceColor(detection.confidence)
-                                }`}
+                                className={`text-xs font-bold shrink-0 ${getConfidenceColor(
+                                  detection.confidence,
+                                )}`}
                               >
                                 {Math.round(detection.confidence * 100)}%
                               </span>
@@ -202,7 +217,9 @@ export const PIIListPanel = ({
                     <Shield className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <div className="text-xs text-default-600 font-medium">Active Redactions</div>
+                    <div className="text-xs text-default-600 font-medium">
+                      Active Redactions
+                    </div>
                     <div className="text-lg font-bold text-primary">
                       {enabledDetections.size}/{detections.length}
                     </div>
@@ -210,9 +227,14 @@ export const PIIListPanel = ({
                 </div>
                 <div className="text-right">
                   <div className="text-xl font-bold text-foreground">
-                    {Math.round((enabledDetections.size / detections.length) * 100)}%
+                    {Math.round(
+                      (enabledDetections.size / detections.length) * 100,
+                    )}
+                    %
                   </div>
-                  <div className="text-xs text-default-500 font-medium">Coverage</div>
+                  <div className="text-xs text-default-500 font-medium">
+                    Coverage
+                  </div>
                 </div>
               </div>
             </CardBody>
