@@ -89,11 +89,15 @@ export class PDFRenderer implements IPDFRenderer {
         throw new Error("Failed to get canvas 2D context");
       }
 
-      // Clear canvas before rendering
-      context.clearRect(0, 0, canvas.width, canvas.height);
+      // Save context state before scaling
+      context.save();
 
       // Scale context for HiDPI
       context.scale(outputScale, outputScale);
+
+      // Fill with white background before rendering to prevent transparency issues
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, viewport.width, viewport.height);
 
       const renderContext = {
         canvasContext: context,
@@ -104,6 +108,9 @@ export class PDFRenderer implements IPDFRenderer {
       this.currentRenderTask = page.render(renderContext);
       await this.currentRenderTask.promise;
       this.currentRenderTask = null;
+
+      // Restore context state after rendering
+      context.restore();
     } catch (error) {
       this.currentRenderTask = null;
       // Don't throw error if it was just a cancellation

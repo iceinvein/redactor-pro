@@ -224,6 +224,9 @@ export default function IndexPage() {
           count: doc.pageCount,
         });
 
+        // Force a render trigger to ensure canvas updates
+        setRenderTrigger((prev) => prev + 1);
+
         completeProcessing("Document loaded successfully");
       } catch (err) {
         const message =
@@ -268,8 +271,8 @@ export default function IndexPage() {
     // Don't create a new controller if one already exists
     if (!canvasControllerRef.current) {
       canvasControllerRef.current = new CanvasController();
+      canvasControllerRef.current.initialize(canvas);
     }
-    canvasControllerRef.current.initialize(canvas);
   }, []);
 
   // Render current page
@@ -286,6 +289,13 @@ export default function IndexPage() {
       isRenderingRef.current = true;
 
       try {
+        // Ensure canvas is visible and has proper dimensions before rendering
+        if (canvasRef.current.width === 0 || canvasRef.current.height === 0) {
+          // Canvas not ready yet, skip this render
+          isRenderingRef.current = false;
+          return;
+        }
+
         // Render the actual document content first
         if (document.type === DocumentType.PDF) {
           await pdfRendererRef.current.renderPage(

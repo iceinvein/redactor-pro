@@ -31,15 +31,12 @@ export const CanvasViewer = ({
 
   // Initialize canvas
   useEffect(() => {
-    if (canvasRef.current) {
-      // Only initialize if we have a controller passed in
-      if (canvasController) {
-        canvasController.initialize(canvasRef.current);
-      }
-      // Always notify parent that canvas is ready
+    if (canvasRef.current && !canvasController) {
+      // Only notify parent that canvas is ready
+      // Don't initialize controller here - let parent handle it
       onCanvasReady?.(canvasRef.current);
     }
-  }, [canvasController, onCanvasReady]);
+  }, [onCanvasReady, canvasController]);
 
   // Handle zoom
   const handleZoomIn = useCallback(() => {
