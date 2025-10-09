@@ -1,6 +1,9 @@
 import { Switch } from "@heroui/switch";
+import { Card, CardBody } from "@heroui/card";
 import { AnimatePresence, motion } from "framer-motion";
+import { Shield, Mail, Phone, CreditCard, Calendar, MapPin, User, FileText, type LucideIcon } from "lucide-react";
 import { type PIIDetection, PIIType } from "@/types/redaction";
+import { EmptyState } from "@/components/EmptyState";
 
 interface PIIListPanelProps {
   detections: PIIDetection[];
@@ -38,6 +41,17 @@ const PII_TYPE_LABELS: Record<PIIType, string> = {
   [PIIType.OTHER]: "Other",
 };
 
+const PII_TYPE_ICONS: Record<PIIType, LucideIcon> = {
+  [PIIType.NAME]: User,
+  [PIIType.EMAIL]: Mail,
+  [PIIType.PHONE]: Phone,
+  [PIIType.SSN]: Shield,
+  [PIIType.ADDRESS]: MapPin,
+  [PIIType.DATE_OF_BIRTH]: Calendar,
+  [PIIType.CREDIT_CARD]: CreditCard,
+  [PIIType.OTHER]: FileText,
+};
+
 export const PIIListPanel = ({
   detections,
   enabledDetections,
@@ -48,11 +62,6 @@ export const PIIListPanel = ({
     return `${detection.type}-${detection.startIndex}-${index}`;
   };
 
-  const truncateText = (text: string, maxLength = 30): string => {
-    if (text.length <= maxLength) return text;
-    return `${text.substring(0, maxLength)}...`;
-  };
-
   const getConfidenceColor = (confidence: number): string => {
     if (confidence >= 0.8) return "text-success";
     if (confidence >= 0.5) return "text-warning";
@@ -60,147 +69,156 @@ export const PIIListPanel = ({
   };
 
   return (
-    <aside
-      className="w-80 border-l border-default-200 bg-default-50/70 backdrop-blur supports-[backdrop-filter]:bg-default-50/50 flex flex-col h-full"
-      aria-label="Detected PII panel"
-    >
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-default-200/60">
-        <h3 className="text-lg font-semibold">Detected PII</h3>
-        <output
-          className="text-sm text-default-500 mt-1 block"
-          aria-live="polite"
-        >
-          {detections.length} item{detections.length !== 1 ? "s" : ""} found
-        </output>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold">Detected PII</h3>
+        {detections.length > 0 && (
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-xs font-medium text-primary">
+            {detections.length} item{detections.length !== 1 ? "s" : ""}
+          </div>
+        )}
       </div>
 
       {/* List */}
-      <section
-        className="flex-1 overflow-y-auto"
-        aria-label="PII detection list"
-      >
+      <div className="flex-1 overflow-y-auto">
         {detections.length === 0 ? (
-          <div className="p-8 text-center">
-            <svg
-              className="w-16 h-16 mx-auto text-default-300 mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <p className="text-sm text-default-500">
-              No PII detected yet.
-              <br />
-              Click "Detect PII" to scan the document.
-            </p>
-          </div>
+          <EmptyState
+            icon="search"
+            title="No PII detected yet"
+            description="Click 'Detect PII' to scan the document for sensitive information"
+          />
         ) : (
-          <ul className="divide-y divide-default-200">
+          <div className="space-y-2 pr-1">
             <AnimatePresence initial={false}>
               {detections.map((detection, index) => {
                 const detectionId = getDetectionId(detection, index);
                 const isEnabled = enabledDetections.has(detectionId);
+                const Icon = PII_TYPE_ICONS[detection.type];
 
                 return (
-                  <motion.li
+                  <motion.div
                     key={detectionId}
                     layout
-                    initial={{ opacity: 0, y: 6 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2, delay: index * 0.03 }}
                   >
-                    <motion.button
-                      type="button"
-                      className="w-full p-4 hover:bg-default-100 transition-colors cursor-pointer text-left"
-                      onClick={() => onHighlightDetection(detectionId)}
-                      onMouseEnter={() => onHighlightDetection(detectionId)}
-                      onMouseLeave={() => onHighlightDetection(null)}
-                      aria-label={`${PII_TYPE_LABELS[detection.type]}: ${truncateText(detection.text)}, confidence ${Math.round(detection.confidence * 100)}%, ${isEnabled ? "enabled" : "disabled"}`}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
-                      transition={{ duration: 0.08 }}
+                    <Card
+                      isPressable
+                      isHoverable
+                      onPress={() => onHighlightDetection(detectionId)}
+                      className={`bg-content2/50 backdrop-blur-sm border transition-all duration-200 w-full ${
+                        isEnabled
+                          ? "border-primary/50 shadow-md"
+                          : "border-divider/50 opacity-60"
+                      }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          {/* PII Type Badge */}
-                          <span
-                            className={`inline-block px-2 py-1 rounded text-xs font-medium mb-2 ${
+                      <CardBody className="p-3">
+                        <div className="flex items-center gap-3">
+                          {/* Icon */}
+                          <div
+                            className={`shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center ${
                               PII_TYPE_COLORS[detection.type]
                             }`}
-                            aria-hidden="true"
                           >
-                            {PII_TYPE_LABELS[detection.type]}
-                          </span>
+                            <Icon className="w-6 h-6" />
+                          </div>
 
-                          {/* Text Preview */}
-                          <p
-                            className="text-sm font-mono break-words mb-2"
-                            aria-hidden="true"
-                          >
-                            {truncateText(detection.text)}
-                          </p>
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            {/* Type Label and Switch */}
+                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                              <span className="text-sm font-bold text-foreground">
+                                {PII_TYPE_LABELS[detection.type]}
+                              </span>
+                              <Switch
+                                size="sm"
+                                isSelected={isEnabled}
+                                onValueChange={(enabled) =>
+                                  onToggleDetection(detectionId, enabled)
+                                }
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label={`${isEnabled ? "Disable" : "Enable"} redaction for this ${PII_TYPE_LABELS[detection.type]}`}
+                              />
+                            </div>
 
-                          {/* Confidence */}
-                          <div
-                            className="flex items-center gap-2 text-xs"
-                            aria-hidden="true"
-                          >
-                            <span className="text-default-500">
-                              Confidence:
-                            </span>
-                            <span
-                              className={`font-semibold ${getConfidenceColor(detection.confidence)}`}
-                            >
-                              {Math.round(detection.confidence * 100)}%
-                            </span>
+                            {/* Text Preview */}
+                            <p className="text-xs font-mono text-default-600 mb-2 break-words line-clamp-1">
+                              {detection.text}
+                            </p>
+
+                            {/* Confidence Progress Bar */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1">
+                                <div className="h-1.5 bg-default-200 rounded-full overflow-hidden">
+                                  <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${detection.confidence * 100}%` }}
+                                    transition={{ duration: 0.5, delay: index * 0.05 }}
+                                    className={`h-full rounded-full ${
+                                      detection.confidence >= 0.8
+                                        ? "bg-success"
+                                        : detection.confidence >= 0.5
+                                          ? "bg-warning"
+                                          : "bg-danger"
+                                    }`}
+                                  />
+                                </div>
+                              </div>
+                              <span
+                                className={`text-xs font-bold shrink-0 ${
+                                  getConfidenceColor(detection.confidence)
+                                }`}
+                              >
+                                {Math.round(detection.confidence * 100)}%
+                              </span>
+                            </div>
                           </div>
                         </div>
-
-                        {/* Toggle Switch */}
-                        <Switch
-                          size="sm"
-                          isSelected={isEnabled}
-                          onValueChange={(enabled) =>
-                            onToggleDetection(detectionId, enabled)
-                          }
-                          onClick={(e) => e.stopPropagation()}
-                          aria-label={`${isEnabled ? "Disable" : "Enable"} redaction for this ${PII_TYPE_LABELS[detection.type]}`}
-                        />
-                      </div>
-                    </motion.button>
-                  </motion.li>
+                      </CardBody>
+                    </Card>
+                  </motion.div>
                 );
               })}
             </AnimatePresence>
-          </ul>
+          </div>
         )}
-      </section>
+      </div>
 
       {/* Footer Stats */}
       {detections.length > 0 && (
-        <footer className="p-4 border-t border-default-200 bg-default-100/70 backdrop-blur">
-          <h4 className="sr-only">Redaction Statistics</h4>
-          <output className="text-xs text-default-600 block">
-            <div className="flex justify-between mb-1">
-              <span>Enabled:</span>
-              <span className="font-semibold">{enabledDetections.size}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Total:</span>
-              <span className="font-semibold">{detections.length}</span>
-            </div>
-          </output>
-        </footer>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-3 pt-3 border-t border-divider/50"
+        >
+          <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary/20">
+            <CardBody className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-default-600 font-medium">Active Redactions</div>
+                    <div className="text-lg font-bold text-primary">
+                      {enabledDetections.size}/{detections.length}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xl font-bold text-foreground">
+                    {Math.round((enabledDetections.size / detections.length) * 100)}%
+                  </div>
+                  <div className="text-xs text-default-500 font-medium">Coverage</div>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        </motion.div>
       )}
-    </aside>
+    </div>
   );
 };

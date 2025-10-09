@@ -1,10 +1,18 @@
 import { Navbar } from "@/components/navbar";
 
+interface DefaultLayoutProps {
+  children: React.ReactNode;
+  navbarProps?: {
+    onOpenLeftPanel?: () => void;
+    onOpenRightPanel?: () => void;
+    showMobileControls?: boolean;
+  };
+}
+
 export default function DefaultLayout({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+  navbarProps,
+}: DefaultLayoutProps) {
   return (
     <div className="relative flex h-screen flex-col overflow-hidden app-bg">
       {/* Decorative gradient blobs */}
@@ -21,9 +29,11 @@ export default function DefaultLayout({
         className="pointer-events-none absolute -bottom-24 left-[-10%] h-72 w-72 rounded-full blur-3xl opacity-30 bg-secondary/30 dark:bg-secondary/20"
       />
 
-      <Navbar />
+      <Navbar {...navbarProps} />
 
-      <main className="flex-1 relative overflow-hidden">{children}</main>
+      <main className="flex-1 relative overflow-hidden">
+        {children}
+      </main>
     </div>
   );
 }

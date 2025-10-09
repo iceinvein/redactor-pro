@@ -13,6 +13,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 
 export class PDFRenderer implements IPDFRenderer {
   private pdfDocument: PDFDocumentProxy | null = null;
+  private currentRenderTask: any = null;
 
   /**
    * Load a PDF document from an ArrayBuffer
@@ -59,6 +60,16 @@ export class PDFRenderer implements IPDFRenderer {
       throw new Error(`Invalid page number: ${pageNumber}`);
     }
 
+    // Cancel any ongoing render operation
+    if (this.currentRenderTask) {
+      try {
+        this.currentRenderTask.cancel();
+      } catch (e) {
+        // Ignore cancellation errors
+      }
+      this.currentRenderTask = null;
+    }
+
     try {
       const page = await this.pdfDocument.getPage(pageNumber);
       const viewport = page.getViewport({ scale });
@@ -78,6 +89,9 @@ export class PDFRenderer implements IPDFRenderer {
         throw new Error("Failed to get canvas 2D context");
       }
 
+      // Clear canvas before rendering
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
       // Scale context for HiDPI
       context.scale(outputScale, outputScale);
 
@@ -87,8 +101,15 @@ export class PDFRenderer implements IPDFRenderer {
       };
 
       // @ts-expect-error - pdfjs-dist types may not match runtime API
-      await page.render(renderContext).promise;
+      this.currentRenderTask = page.render(renderContext);
+      await this.currentRenderTask.promise;
+      this.currentRenderTask = null;
     } catch (error) {
+      this.currentRenderTask = null;
+      // Don't throw error if it was just a cancellation
+      if (error instanceof Error && error.message.includes('cancel')) {
+        return;
+      }
       throw new Error(
         `Failed to render page ${pageNumber}: ${error instanceof Error ? error.message : "Unknown error"}`,
       );

@@ -1,6 +1,11 @@
-import { Button, ButtonGroup } from "@heroui/button";
+import { Button } from "@heroui/button";
+import { Tabs, Tab } from "@heroui/tabs";
+import { Card, CardBody } from "@heroui/card";
+import { motion, AnimatePresence } from "framer-motion";
 import { useMemo, useState } from "react";
+import { Layers, History, Settings as SettingsIcon, Eye } from "lucide-react";
 import { PIIListPanel } from "@/components/PIIListPanel";
+import { EmptyState } from "@/components/EmptyState";
 import type { PIIDetection, RedactionRegion } from "@/types/redaction";
 
 interface RightPanelProps {
@@ -37,124 +42,211 @@ export const RightPanel = ({
   );
 
   return (
-    <aside className="border-l border-default-200 bg-default-50/70 backdrop-blur supports-[backdrop-filter]:bg-default-50/50 flex flex-col overflow-hidden">
+    <aside className="h-full border-l border-divider/50 bg-gradient-to-b from-content1/50 to-content1/80 backdrop-blur-xl flex flex-col overflow-hidden">
       {/* Tabs */}
-      <div className="p-3 border-b border-default-200/60">
-        <ButtonGroup size="sm">
-          <Button
-            variant={tab === "detections" ? "solid" : "flat"}
-            color={tab === "detections" ? "primary" : "default"}
-            onPress={() => setTab("detections")}
-          >
-            Detections
-          </Button>
-          <Button
-            variant={tab === "layers" ? "solid" : "flat"}
-            color={tab === "layers" ? "primary" : "default"}
-            onPress={() => setTab("layers")}
-          >
-            Layers
-          </Button>
-          <Button
-            variant={tab === "history" ? "solid" : "flat"}
-            color={tab === "history" ? "primary" : "default"}
-            onPress={() => setTab("history")}
-          >
-            History
-          </Button>
-          <Button
-            variant={tab === "settings" ? "solid" : "flat"}
-            color={tab === "settings" ? "primary" : "default"}
-            onPress={() => setTab("settings")}
-          >
-            Settings
-          </Button>
-        </ButtonGroup>
+      <div className="p-3 border-b border-divider/50">
+        <Tabs
+          selectedKey={tab}
+          onSelectionChange={(key) => setTab(key as typeof tab)}
+          variant="underlined"
+          color="primary"
+          size="sm"
+          classNames={{
+            tabList: "w-full gap-0",
+            cursor: "bg-primary",
+            tab: "px-1.5 min-w-0",
+            tabContent: "group-data-[selected=true]:text-primary",
+          }}
+        >
+          <Tab
+            key="detections"
+            title={
+              <div className="flex items-center gap-1.5">
+                <Eye className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">Detections</span>
+              </div>
+            }
+          />
+          <Tab
+            key="layers"
+            title={
+              <div className="flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">Layers</span>
+              </div>
+            }
+          />
+          <Tab
+            key="history"
+            title={
+              <div className="flex items-center gap-1.5">
+                <History className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">History</span>
+              </div>
+            }
+          />
+          <Tab
+            key="settings"
+            title={
+              <div className="flex items-center gap-1.5">
+                <SettingsIcon className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">Settings</span>
+              </div>
+            }
+          />
+        </Tabs>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-20">
-        {tab === "detections" && (
-          <PIIListPanel
-            detections={detections}
-            enabledDetections={enabledDetections}
-            onToggleDetection={onToggleDetection}
-            onHighlightDetection={onHighlightDetection}
-          />
-        )}
+      <div className="flex-1 overflow-y-auto">
+        <AnimatePresence mode="wait">
+          {tab === "detections" && (
+            <motion.div
+              key="detections"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+              className="h-full px-4 py-4"
+            >
+              <PIIListPanel
+                detections={detections}
+                enabledDetections={enabledDetections}
+                onToggleDetection={onToggleDetection}
+                onHighlightDetection={onHighlightDetection}
+              />
+            </motion.div>
+          )}
 
-        {tab === "layers" && (
-          <section aria-label="Layers panel" className="p-3">
-            <header className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold">
-                Layers (Page {currentPage})
-              </h3>
-              <span className="text-xs text-default-500">
-                {regions.length} region{regions.length === 1 ? "" : "s"}
-              </span>
-            </header>
-            {regions.length === 0 ? (
-              <p className="text-sm text-default-500">No regions yet.</p>
-            ) : (
-              <ul className="space-y-2">
-                {regions.map((r) => (
-                  <li
-                    key={r.id}
-                    className="flex items-center justify-between rounded-md border border-default-200 bg-white/60 dark:bg-default-100/60 p-2"
-                  >
-                    <div className="text-xs">
-                      <div className="font-mono text-default-800 dark:text-default-200">
-                        {r.piiType ?? "manual"}
-                      </div>
-                      <div className="text-default-500">
-                        x:{Math.round(r.x)} y:{Math.round(r.y)} w:
-                        {Math.round(r.width)} h:{Math.round(r.height)}
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="flat"
-                      color="danger"
-                      onPress={() => onRemoveRegion(currentPage, r.id)}
+          {tab === "layers" && (
+            <motion.section
+              key="layers"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+              aria-label="Layers panel"
+              className="px-4 py-4"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold">
+                  Layers
+                </h3>
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-default-100 text-xs font-medium">
+                  <span className="text-default-500">Page {currentPage}</span>
+                  <div className="w-px h-3 bg-divider" />
+                  <span className="text-primary">{regions.length} region{regions.length === 1 ? "" : "s"}</span>
+                </div>
+              </div>
+              
+              {regions.length === 0 ? (
+                <EmptyState
+                  icon="shield"
+                  title="No redactions yet"
+                  description="Draw manually or detect PII to add redaction regions"
+                />
+              ) : (
+                <div className="space-y-3">
+                  {regions.map((r, index) => (
+                    <motion.div
+                      key={r.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
                     >
-                      Remove
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
+                      <Card className="bg-content2/50 backdrop-blur-sm border border-divider/50 hover:border-primary/50 transition-colors">
+                        <CardBody className="p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                <span className="text-sm font-semibold text-foreground capitalize">
+                                  {r.piiType ?? "manual"}
+                                </span>
+                              </div>
+                              <div className="text-xs text-default-500 font-mono space-y-0.5">
+                                <div>x: {Math.round(r.x)}, y: {Math.round(r.y)}</div>
+                                <div>w: {Math.round(r.width)}, h: {Math.round(r.height)}</div>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="flat"
+                              color="danger"
+                              onPress={() => onRemoveRegion(currentPage, r.id)}
+                              className="shrink-0"
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </CardBody>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.section>
+          )}
 
-        {tab === "history" && (
-          <section aria-label="History panel" className="p-3">
-            <h3 className="text-sm font-semibold mb-2">History</h3>
-            <p className="text-sm text-default-500">No history yet.</p>
-          </section>
-        )}
+          {tab === "history" && (
+            <motion.section
+              key="history"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+              aria-label="History panel"
+              className="px-4 py-4"
+            >
+              <h3 className="text-lg font-bold mb-4">History</h3>
+              <EmptyState
+                icon="search"
+                title="No history yet"
+                description="Your redaction history will appear here"
+              />
+            </motion.section>
+          )}
 
-        {tab === "settings" && (
-          <section aria-label="Settings panel" className="p-3 space-y-4">
-            <div>
-              <h3 className="text-sm font-semibold mb-2">Export Format</h3>
-              <ButtonGroup size="sm">
-                <Button
-                  variant={exportFormat === "pdf" ? "solid" : "flat"}
-                  color={exportFormat === "pdf" ? "primary" : "default"}
-                  onPress={() => onChangeExportFormat("pdf")}
-                >
-                  PDF
-                </Button>
-                <Button
-                  variant={exportFormat === "png" ? "solid" : "flat"}
-                  color={exportFormat === "png" ? "primary" : "default"}
-                  onPress={() => onChangeExportFormat("png")}
-                >
-                  PNG
-                </Button>
-              </ButtonGroup>
-            </div>
-          </section>
-        )}
+          {tab === "settings" && (
+            <motion.section
+              key="settings"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+              aria-label="Settings panel"
+              className="space-y-6 px-4 py-4"
+            >
+              <div>
+                <h3 className="text-lg font-bold mb-4">Export Settings</h3>
+                <Card className="bg-content2/50 backdrop-blur-sm border border-divider/50">
+                  <CardBody className="p-4">
+                    <label className="block text-sm font-semibold mb-3">Export Format</label>
+                    <div className="flex gap-3">
+                      <Button
+                        size="lg"
+                        variant={exportFormat === "pdf" ? "solid" : "flat"}
+                        color={exportFormat === "pdf" ? "primary" : "default"}
+                        onPress={() => onChangeExportFormat("pdf")}
+                        className="flex-1 font-semibold"
+                      >
+                        PDF
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant={exportFormat === "png" ? "solid" : "flat"}
+                        color={exportFormat === "png" ? "primary" : "default"}
+                        onPress={() => onChangeExportFormat("png")}
+                        className="flex-1 font-semibold"
+                      >
+                        PNG
+                      </Button>
+                    </div>
+                  </CardBody>
+                </Card>
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
       </div>
     </aside>
   );

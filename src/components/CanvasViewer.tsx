@@ -1,10 +1,15 @@
 import { Button } from "@heroui/button";
+import { motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ZoomIn, ZoomOut, Maximize2, Settings } from "lucide-react";
 import type { CanvasController } from "@/services/CanvasController";
 
 interface CanvasViewerProps {
   canvasController: CanvasController | null;
   onCanvasReady?: (canvas: HTMLCanvasElement) => void;
+  // Mobile right panel control
+  onOpenRightPanel?: () => void;
+  showMobileRightButton?: boolean;
 }
 
 const MIN_ZOOM = 0.25;
@@ -14,6 +19,8 @@ const ZOOM_STEP = 0.25;
 export const CanvasViewer = ({
   canvasController,
   onCanvasReady,
+  onOpenRightPanel,
+  showMobileRightButton = false,
 }: CanvasViewerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -93,87 +100,96 @@ export const CanvasViewer = ({
   }, []);
 
   return (
-    <div className="flex flex-col min-h-full">
-      {/* Zoom Controls */}
-      <div
-        className="flex items-center justify-between gap-2 p-4 border-b border-default-200"
+    <div className="flex flex-col min-h-full relative">
+      {/* Floating Zoom Controls - Modern Design */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="absolute top-4 left-4 z-30 flex items-center gap-2 bg-content1/80 backdrop-blur-2xl rounded-2xl p-2 shadow-xl border border-divider/50"
         role="toolbar"
-        aria-label="Canvas zoom controls"
+        aria-label="Canvas controls"
       >
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="flat"
-            onPress={handleZoomOut}
-            isDisabled={zoom <= MIN_ZOOM}
-            aria-label="Zoom out"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
+        <Button
+          size="sm"
+          variant="light"
+          isIconOnly
+          onPress={handleZoomOut}
+          isDisabled={zoom <= MIN_ZOOM}
+          aria-label="Zoom out"
+          className="rounded-xl"
+        >
+          <ZoomOut className="w-4 h-4" />
+        </Button>
+
+        <motion.output
+          whileHover={{ scale: 1.05 }}
+          className="text-sm font-bold min-w-[60px] text-center px-2 py-1 rounded-lg bg-primary/10 text-primary"
+          aria-live="polite"
+          aria-label={`Current zoom level: ${Math.round(zoom * 100)} percent`}
+        >
+          {Math.round(zoom * 100)}%
+        </motion.output>
+
+        <Button
+          size="sm"
+          variant="light"
+          isIconOnly
+          onPress={handleZoomIn}
+          isDisabled={zoom >= MAX_ZOOM}
+          aria-label="Zoom in"
+          className="rounded-xl"
+        >
+          <ZoomIn className="w-4 h-4" />
+        </Button>
+
+        <div className="w-px h-6 bg-divider mx-1" />
+
+        <Button
+          size="sm"
+          variant="light"
+          isIconOnly
+          onPress={handleZoomReset}
+          aria-label="Reset zoom to 100%"
+          className="rounded-xl"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </Button>
+
+        {/* Mobile right panel button */}
+        {showMobileRightButton && onOpenRightPanel && (
+          <>
+            <div className="w-px h-6 bg-divider mx-1 lg:hidden" />
+            <Button
+              size="sm"
+              variant="light"
+              isIconOnly
+              onPress={onOpenRightPanel}
+              aria-label="Open panels"
+              className="lg:hidden rounded-xl"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"
-              />
-            </svg>
-          </Button>
+              <Settings className="w-4 h-4" />
+            </Button>
+          </>
+        )}
+      </motion.div>
 
-          <output
-            className="text-sm font-medium min-w-[60px] text-center"
-            aria-live="polite"
-            aria-label={`Current zoom level: ${Math.round(zoom * 100)} percent`}
-          >
-            {Math.round(zoom * 100)}%
-          </output>
-
-          <Button
-            size="sm"
-            variant="flat"
-            onPress={handleZoomIn}
-            isDisabled={zoom >= MAX_ZOOM}
-            aria-label="Zoom in"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-              />
-            </svg>
-          </Button>
-
-          <Button
-            size="sm"
-            variant="flat"
-            onPress={handleZoomReset}
-            aria-label="Reset zoom to 100%"
-          >
-            Reset
-          </Button>
-
-          <div className="ml-4 text-xs text-default-600" role="note">
-            Tip: Ctrl/Cmd + Scroll to zoom, Shift + Drag to pan
-          </div>
-        </div>
-      </div>
+      {/* Help text - floating on desktop */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="hidden lg:block absolute top-4 right-4 z-30 text-xs text-default-600 bg-content1/60 backdrop-blur-xl rounded-xl px-3 py-2 shadow-lg border border-divider/50"
+        role="note"
+      >
+        <span className="font-medium">Tip:</span> Ctrl/Cmd + Scroll to zoom, Shift + Drag to pan
+      </motion.div>
 
       {/* Canvas Container */}
       <div
         ref={containerRef}
-        className={`flex-1 overflow-auto bg-default-100 relative canvas-container pb-16 ${isPanning ? "panning" : ""}`}
+        className={`flex-1 overflow-auto bg-gradient-to-br from-default-50 to-default-100 relative canvas-container pb-20 sm:pb-24 isolate ${isPanning ? "panning cursor-grabbing" : "cursor-default"}`}
+        style={{ contain: "paint" }}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -183,20 +199,28 @@ export const CanvasViewer = ({
         aria-label="Document canvas viewer"
       >
         <div
-          className={`canvas-wrapper ${isPanning ? "no-transition" : ""}`}
+          className={`canvas-wrapper flex items-center justify-center min-h-full p-8 ${isPanning ? "no-transition" : "transition-transform duration-200"}`}
           style={{
-            transform: `translate(${panOffset.x}px, ${panOffset.y}px)`,
+            transform: `translate3d(${panOffset.x}px, ${panOffset.y}px, 0)`,
+            willChange: "transform",
           }}
         >
-          <canvas
-            ref={canvasRef}
-            className="shadow-lg bg-white"
-            style={{
-              transform: `scale(${zoom})`,
-            }}
-            role="img"
-            aria-label="Document preview with redaction regions"
-          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <canvas
+              ref={canvasRef}
+              className="shadow-2xl bg-white rounded-2xl"
+              style={{
+                transform: `scale(${zoom}) translateZ(0)`,
+                willChange: "transform",
+              }}
+              role="img"
+              aria-label="Document preview with redaction regions"
+            />
+          </motion.div>
         </div>
       </div>
     </div>

@@ -1,9 +1,17 @@
 import { Button } from "@heroui/button";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  useDisclosure,
+} from "@heroui/modal";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BottomDock } from "@/components/BottomDock";
 import { CanvasViewer } from "@/components/CanvasViewer";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { LeftRail } from "@/components/LeftRail";
+import { MobileToolbar } from "@/components/MobileToolbar";
 import { ProcessingStatus } from "@/components/ProcessingStatus";
 import { RightPanel } from "@/components/RightPanel";
 import { useDocument, useErrors, useProcessing, useRedactions } from "@/hooks";
@@ -65,6 +73,25 @@ export default function IndexPage() {
   const [manualOnlyMode, setManualOnlyMode] = useState(false);
   const [_renderTrigger, setRenderTrigger] = useState(0);
   const [exportFormat, setExportFormat] = useState<"pdf" | "png">("pdf");
+  const [hasRunDetection, setHasRunDetection] = useState(false);
+  
+  // Mobile modal control using HeroUI's useDisclosure hook (right panel only)
+  const {
+    isOpen: isRightModalOpen,
+    onOpen: onOpenRightModal,
+    onClose: onCloseRightModal,
+  } = useDisclosure();
+
+  // Force canvas re-render when modal closes (fixes blank canvas issue)
+  useEffect(() => {
+    if (!isRightModalOpen && document && !isRenderingRef.current) {
+      // Small delay to prevent race condition with ongoing render
+      const timer = setTimeout(() => {
+        setRenderTrigger((prev) => prev + 1);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isRightModalOpen, document]);
 
   // Service instances (refs to persist across renders)
   const pdfRendererRef = useRef<PDFRenderer>(new PDFRenderer());
@@ -75,6 +102,7 @@ export default function IndexPage() {
   const redactionManagerRef = useRef<RedactionManager>(new RedactionManager());
   const exportServiceRef = useRef<ExportService>(new ExportService());
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isRenderingRef = useRef(false);
 
   // Initialize service instances (lazy loading - services initialize on first use)
   useEffect(() => {
@@ -173,6 +201,7 @@ export default function IndexPage() {
         setPiiDetections([]);
         setEnabledDetections(new Set());
         setManualOnlyMode(false);
+        setHasRunDetection(false);
 
         completeProcessing("Document loaded successfully");
       } catch (err) {
@@ -201,6 +230,7 @@ export default function IndexPage() {
     setEnabledDetections(new Set());
     setMode(InteractionMode.VIEW);
     setManualOnlyMode(false);
+    setHasRunDetection(false);
 
     // Clear canvas
     if (canvasControllerRef.current) {
@@ -224,6 +254,13 @@ export default function IndexPage() {
     const renderPage = async () => {
       if (!document || !canvasControllerRef.current || !canvasRef.current)
         return;
+
+      // Prevent concurrent renders
+      if (isRenderingRef.current) {
+        return;
+      }
+
+      isRenderingRef.current = true;
 
       try {
         // Render the actual document content first
@@ -263,13 +300,13 @@ export default function IndexPage() {
         const message =
           err instanceof Error ? err.message : "Failed to render page";
         handleCanvasError(message);
+      } finally {
+        isRenderingRef.current = false;
       }
     };
 
     renderPage();
-    // renderTrigger is intentionally included to force re-renders when redactions change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [document, currentPage, getRegionsForPage, handleCanvasError]);
+  }, [document, currentPage, getRegionsForPage, handleCanvasError, _renderTrigger]);
 
   // Handle PII detection
   const handleDetectPII = useCallback(async () => {
@@ -329,6 +366,7 @@ export default function IndexPage() {
 
       completeProcessing(`Found ${detections.length} PII items`);
       setMode(InteractionMode.REVIEW);
+      setHasRunDetection(true);
 
       // Optional: Clean up resources after detection is complete
       // Note: We keep the engines alive for potential re-detection on other pages
@@ -573,53 +611,117 @@ export default function IndexPage() {
   }, [document, currentPage, mode, goToPage, removeRegion, selectRegion]);
 
   return (
-    <div className="h-full w-full flex flex-col overflow-hidden">
-      {/* Processing Status Overlay */}
-      {isProcessing && <ProcessingStatus status={processingStatus} />}
+    <>
+      {/* Mobile Right Panel Modal - Side Drawer */}
 
-      {/* Main Content */}
-      {!document ? (
-        <div className="flex-1 flex items-center justify-center bg-default-50">
-          <DocumentUpload
-            onDocumentLoad={handleDocumentLoad}
-            onError={(err) => handleFileError(err)}
-          />
-        </div>
-      ) : (
-        <div className="flex-1 flex overflow-hidden">
-          {/* Left | Center | Right */}
-          <div
-            className="flex-1 grid overflow-hidden"
-            style={{ gridTemplateColumns: "240px 1fr 320px" }}
-          >
-            {/* Left rail */}
-            <LeftRail
-              mode={mode}
-              onModeChange={setMode}
-              onClearAll={() => {
-                clearAllRegions(currentPage);
-                if (canvasControllerRef.current) {
-                  canvasControllerRef.current.clearRegions();
-                }
-                setRenderTrigger((prev) => prev + 1);
-              }}
-              onUploadNew={handleUploadNew}
-              isProcessing={isProcessing}
-              hasDocument={!!document}
-              manualOnlyMode={manualOnlyMode}
+      <Modal
+        isOpen={isRightModalOpen}
+        onClose={onCloseRightModal}
+        size="lg"
+        placement="center"
+        scrollBehavior="inside"
+        className="lg:hidden"
+        classNames={{
+          base: "max-h-[80vh]",
+          wrapper: "!items-center",
+          body: "p-0 overflow-hidden flex-1",
+          header: "border-b border-default-200 flex-shrink-0",
+        }}
+      >
+        <ModalContent className="flex flex-col h-full">
+          <ModalHeader>
+            Panels
+          </ModalHeader>
+          <ModalBody className="flex-1 overflow-hidden">
+            <RightPanel
+              detections={piiDetections}
+              enabledDetections={enabledDetections}
+              onToggleDetection={handleToggleDetection}
+              onHighlightDetection={handleHighlightDetection}
+              getRegionsForPage={getRegionsForPage}
+              currentPage={currentPage}
+              onRemoveRegion={(page, id) => removeRegion(page, id)}
+              exportFormat={exportFormat}
+              onChangeExportFormat={setExportFormat}
             />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
 
-            {/* Canvas center */}
+      <div className="h-full w-full flex flex-col overflow-hidden">
+        {/* Processing Status Overlay */}
+        {isProcessing && <ProcessingStatus status={processingStatus} />}
+
+        {/* Main Content */}
+        {!document ? (
+          <div className="flex-1 flex items-center justify-center bg-default-50">
+            <DocumentUpload
+              onDocumentLoad={handleDocumentLoad}
+              onError={(err) => handleFileError(err)}
+            />
+          </div>
+        ) : (
+
+          <div className="flex-1 flex overflow-hidden pb-14 sm:pb-16">
+            {/* Responsive Grid: single column on mobile, 3-column on desktop */}
+            <div className="flex-1 grid overflow-hidden grid-cols-1 lg:grid-cols-[240px_1fr_380px]">
+              {/* Left rail - hidden on mobile, visible on desktop */}
+              <div className="hidden lg:block">
+                <LeftRail
+                  mode={mode}
+                  onModeChange={setMode}
+                  onClearAll={() => {
+                    clearAllRegions(currentPage);
+                    setPiiDetections([]);
+                    setEnabledDetections(new Set());
+                    setHasRunDetection(false);
+                    if (canvasControllerRef.current) {
+                      canvasControllerRef.current.clearRegions();
+                    }
+                    setRenderTrigger((prev) => prev + 1);
+                  }}
+                  onUploadNew={handleUploadNew}
+                  isProcessing={isProcessing}
+                  hasDocument={!!document}
+                  manualOnlyMode={manualOnlyMode}
+                />
+              </div>
+
+            {/* Canvas center - full width on mobile */}
             <div className="overflow-hidden flex flex-col">
+              {/* Mobile expandable toolbar */}
+              {document && (
+                <MobileToolbar
+                  mode={mode}
+                  onModeChange={setMode}
+                  onClearAll={() => {
+                    clearAllRegions(currentPage);
+                    setPiiDetections([]);
+                    setEnabledDetections(new Set());
+                    setHasRunDetection(false);
+                    if (canvasControllerRef.current) {
+                      canvasControllerRef.current.clearRegions();
+                    }
+                    setRenderTrigger((prev) => prev + 1);
+                  }}
+                  onUploadNew={handleUploadNew}
+                  isProcessing={isProcessing}
+                  hasDocument={!!document}
+                  manualOnlyMode={manualOnlyMode}
+                />
+              )}
+              
               <div className="flex-1 flex flex-col">
                 <CanvasViewer
                   canvasController={canvasControllerRef.current}
                   onCanvasReady={handleCanvasReady}
+                  onOpenRightPanel={onOpenRightModal}
+                  showMobileRightButton={!!document}
                 />
               </div>
               {/* Page Navigator at bottom of canvas */}
               {document && document.pageCount > 1 && (
-                <div className="border-t border-default-200 bg-default-50/70 backdrop-blur p-3">
+                <div className="border-t border-default-200 bg-default-50/80 dark:bg-default-100/80 p-2 sm:p-3">
                   <div className="flex items-center justify-center gap-2">
                     <Button
                       size="sm"
@@ -643,7 +745,7 @@ export default function IndexPage() {
                         />
                       </svg>
                     </Button>
-                    <div className="text-sm font-medium" aria-live="polite">
+                    <div className="text-xs sm:text-sm font-medium" aria-live="polite">
                       Page {currentPage} of {document.pageCount}
                     </div>
                     <Button
@@ -673,33 +775,37 @@ export default function IndexPage() {
               )}
             </div>
 
-            {/* Right panel tabs */}
-            <RightPanel
-              detections={piiDetections}
-              enabledDetections={enabledDetections}
-              onToggleDetection={handleToggleDetection}
-              onHighlightDetection={handleHighlightDetection}
-              getRegionsForPage={getRegionsForPage}
-              currentPage={currentPage}
-              onRemoveRegion={(page, id) => removeRegion(page, id)}
-              exportFormat={exportFormat}
-              onChangeExportFormat={setExportFormat}
-            />
+              {/* Right panel tabs - hidden on mobile, visible on desktop */}
+              <div className="hidden lg:block">
+                <RightPanel
+                  detections={piiDetections}
+                  enabledDetections={enabledDetections}
+                  onToggleDetection={handleToggleDetection}
+                  onHighlightDetection={handleHighlightDetection}
+                  getRegionsForPage={getRegionsForPage}
+                  currentPage={currentPage}
+                  onRemoveRegion={(page, id) => removeRegion(page, id)}
+                  exportFormat={exportFormat}
+                  onChangeExportFormat={setExportFormat}
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Fixed bottom action bar */}
-      {document && (
-        <BottomDock
-          hasDocument={!!document}
-          isProcessing={isProcessing}
-          statusText={processingStatus.message}
-          onDetectPII={handleDetectPII}
-          onExport={() => handleExport()}
-          hasRedactions={getRegionsForPage(currentPage).length > 0}
-        />
-      )}
-    </div>
+        {/* Fixed bottom action bar */}
+        {document && (
+          <BottomDock
+            hasDocument={!!document}
+            isProcessing={isProcessing}
+            statusText={processingStatus.message}
+            onDetectPII={handleDetectPII}
+            onExport={() => handleExport()}
+            hasRedactions={getRegionsForPage(currentPage).length > 0}
+            hasRunDetection={hasRunDetection}
+          />
+        )}
+      </div>
+    </>
   );
 }

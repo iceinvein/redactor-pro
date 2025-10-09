@@ -1,4 +1,4 @@
-import { createWorker, type Worker as TesseractWorker } from "tesseract.js";
+import { createWorker, PSM, type Worker as TesseractWorker } from "tesseract.js";
 import type { OCREngine, OCRResult, OCRWord } from "../types/redaction";
 
 /**
@@ -81,7 +81,7 @@ export class OCREngineImpl implements OCREngine {
 
       // Perform OCR recognition with word-level data
       await this.worker.setParameters({
-        tessedit_pageseg_mode: "1", // Auto page segmentation with OSD
+        tessedit_pageseg_mode: PSM.AUTO_OSD, // Auto page segmentation with OSD
       });
 
       const result = await this.worker.recognize(

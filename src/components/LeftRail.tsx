@@ -52,7 +52,7 @@ export const LeftRail = ({
   manualOnlyMode = false,
 }: LeftRailProps) => {
   return (
-    <aside className="border-r border-default-200 bg-default-50/70 backdrop-blur supports-[backdrop-filter]:bg-default-50/50 p-3 flex flex-col gap-3 overflow-auto">
+    <aside className="border-r border-default-200 bg-default-50/80 dark:bg-default-100/80 p-3 flex flex-col gap-3 overflow-auto">
       {/* Upload New (if a document is loaded) */}
       {hasDocument && onUploadNew && (
         <Button
