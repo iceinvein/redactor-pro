@@ -1,0 +1,10 @@
+# Robots.txt for Redactor Pro
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://redactor-pro.netlify.app/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
