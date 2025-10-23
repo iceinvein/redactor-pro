@@ -18,13 +18,13 @@ export function useRedactions() {
         detections.forEach((detection) => {
           // Group words by line based on their y-coordinates
           // Words on the same line should have similar y0 values
-          const lines: typeof detection.words[] = [];
+          const lines: (typeof detection.words)[] = [];
           let currentLine: typeof detection.words = [];
           let lastY0 = -1;
 
           detection.words.forEach((word) => {
             const y0 = word.bbox?.y0 || 0;
-            
+
             // If this is the first word or it's on the same line (within 5px tolerance)
             if (lastY0 === -1 || Math.abs(y0 - lastY0) < 5) {
               currentLine.push(word);

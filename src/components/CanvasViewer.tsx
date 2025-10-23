@@ -39,7 +39,11 @@ export const CanvasViewer = ({
     // Only run when component mounts, not when onCanvasReady changes
     // This prevents re-initialization which would clear the canvas
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [
+    // Only notify parent that canvas is ready
+    // Don't initialize controller here - let parent handle it
+    onCanvasReady,
+  ]);
 
   // Handle zoom
   const handleZoomIn = useCallback(() => {
