@@ -113,15 +113,39 @@ export class OCREngineImpl implements OCREngine {
               if (paragraph.lines && Array.isArray(paragraph.lines)) {
                 for (const line of paragraph.lines) {
                   if (line.words && Array.isArray(line.words)) {
+                    // Get line baseline for more accurate bounding boxes
+                    const lineBaseline = line.baseline?.y0 || null;
+                    
                     for (const word of line.words) {
+                      let bbox = {
+                        x0: word.bbox.x0,
+                        y0: word.bbox.y0,
+                        x1: word.bbox.x1,
+                        y1: word.bbox.y1,
+                      };
+                      
+                      const width = bbox.x1 - bbox.x0;
+                      const height = bbox.y1 - bbox.y0;
+                      const avgCharWidth = width / word.text.length;
+                      const aspectRatio = height / avgCharWidth;
+                      
+                      // If bbox is unreasonably tall and we have baseline info, use it to correct
+                      if (lineBaseline !== null && aspectRatio > 2.5) {
+                        // Typical text height is about 1.2-1.5x character width
+                        const expectedHeight = avgCharWidth * 1.5;
+                        const correctedY0 = lineBaseline - expectedHeight * 0.8; // 80% above baseline
+                        
+                        bbox = {
+                          x0: bbox.x0,
+                          y0: correctedY0,
+                          x1: bbox.x1,
+                          y1: bbox.y1
+                        };
+                      }
+                      
                       words.push({
                         text: word.text,
-                        bbox: {
-                          x0: word.bbox.x0,
-                          y0: word.bbox.y0,
-                          x1: word.bbox.x1,
-                          y1: word.bbox.y1,
-                        },
+                        bbox,
                         confidence: word.confidence,
                       });
                     }

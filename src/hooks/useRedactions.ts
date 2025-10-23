@@ -13,20 +13,57 @@ export function useRedactions() {
         const newMap = new Map(prev);
         const pageRegions = newMap.get(pageNumber) || [];
 
-        const newRegions: RedactionRegion[] = detections.map((detection) => {
-          const bbox = detection.words[0]?.bbox;
-          const lastBbox = detection.words[detection.words.length - 1]?.bbox;
+        const newRegions: RedactionRegion[] = [];
 
-          return {
-            id: `auto-${Date.now()}-${Math.random()}`,
-            x: bbox?.x0 || 0,
-            y: bbox?.y0 || 0,
-            width: (lastBbox?.x1 || 0) - (bbox?.x0 || 0),
-            height: (bbox?.y1 || 0) - (bbox?.y0 || 0),
-            piiType: detection.type,
-            confidence: detection.confidence,
-            isManual: false,
-          };
+        detections.forEach((detection) => {
+          // Group words by line based on their y-coordinates
+          // Words on the same line should have similar y0 values
+          const lines: typeof detection.words[] = [];
+          let currentLine: typeof detection.words = [];
+          let lastY0 = -1;
+
+          detection.words.forEach((word) => {
+            const y0 = word.bbox?.y0 || 0;
+            
+            // If this is the first word or it's on the same line (within 5px tolerance)
+            if (lastY0 === -1 || Math.abs(y0 - lastY0) < 5) {
+              currentLine.push(word);
+              lastY0 = y0;
+            } else {
+              // New line detected
+              if (currentLine.length > 0) {
+                lines.push(currentLine);
+              }
+              currentLine = [word];
+              lastY0 = y0;
+            }
+          });
+
+          // Don't forget the last line
+          if (currentLine.length > 0) {
+            lines.push(currentLine);
+          }
+
+          // Create a redaction region for each line
+          lines.forEach((lineWords) => {
+            const firstWord = lineWords[0];
+            const lastWord = lineWords[lineWords.length - 1];
+            const bbox = firstWord?.bbox;
+            const lastBbox = lastWord?.bbox;
+
+            if (bbox && lastBbox) {
+              newRegions.push({
+                id: `auto-${Date.now()}-${Math.random()}`,
+                x: bbox.x0,
+                y: bbox.y0,
+                width: lastBbox.x1 - bbox.x0,
+                height: lastBbox.y1 - bbox.y0,
+                piiType: detection.type,
+                confidence: detection.confidence,
+                isManual: false,
+              });
+            }
+          });
         });
 
         newMap.set(pageNumber, [...pageRegions, ...newRegions]);
