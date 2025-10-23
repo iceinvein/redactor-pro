@@ -197,7 +197,24 @@ export default function IndexPage() {
         // Clean up previous document resources
         if (canvasControllerRef.current) {
           canvasControllerRef.current.clearPageCache();
+          canvasControllerRef.current.clearRegions();
         }
+
+        // Clear the canvas before loading new document
+        if (canvasRef.current) {
+          const ctx = canvasRef.current.getContext("2d");
+          if (ctx) {
+            ctx.clearRect(
+              0,
+              0,
+              canvasRef.current.width,
+              canvasRef.current.height,
+            );
+          }
+        }
+
+        // Reset rendering flag to allow new render
+        isRenderingRef.current = false;
 
         // Load document into appropriate renderer
         if (doc.type === DocumentType.PDF) {
@@ -224,10 +241,13 @@ export default function IndexPage() {
           count: doc.pageCount,
         });
 
-        // Force a render trigger to ensure canvas updates
-        setRenderTrigger((prev) => prev + 1);
-
         completeProcessing("Document loaded successfully");
+
+        // Force a render trigger after state updates to ensure canvas renders
+        // Use setTimeout to ensure all state updates have been processed
+        setTimeout(() => {
+          setRenderTrigger((prev) => prev + 1);
+        }, 50);
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Failed to load document";
@@ -258,28 +278,44 @@ export default function IndexPage() {
     setHasRunDetection(false);
     clearHistory();
 
-    // Clear canvas
+    // Clear canvas and controller
     if (canvasControllerRef.current) {
       canvasControllerRef.current.clearPageCache();
+      canvasControllerRef.current.clearRegions();
+    }
+
+    // Clear the canvas element
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext("2d");
+      if (ctx) {
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
     }
   }, [clearDocument, clearAllRegions, clearHistory]);
 
   // Handle canvas ready
   const handleCanvasReady = useCallback((canvas: HTMLCanvasElement) => {
+    // If canvas reference changed, reinitialize the controller
+    const canvasChanged = canvasRef.current !== canvas;
     canvasRef.current = canvas;
 
-    // Don't create a new controller if one already exists
     if (!canvasControllerRef.current) {
+      // Create new controller if it doesn't exist
       canvasControllerRef.current = new CanvasController();
       canvasControllerRef.current.initialize(canvas);
+    } else if (canvasChanged) {
+      // Reinitialize existing controller with new canvas element
+      canvasControllerRef.current.initialize(canvas);
     }
+    // Don't reinitialize if canvas hasn't changed - it would clear the canvas!
   }, []);
 
   // Render current page
   useEffect(() => {
     const renderPage = async () => {
-      if (!document || !canvasControllerRef.current || !canvasRef.current)
+      if (!document || !canvasControllerRef.current || !canvasRef.current) {
         return;
+      }
 
       // Prevent concurrent renders
       if (isRenderingRef.current) {
@@ -289,14 +325,8 @@ export default function IndexPage() {
       isRenderingRef.current = true;
 
       try {
-        // Ensure canvas is visible and has proper dimensions before rendering
-        if (canvasRef.current.width === 0 || canvasRef.current.height === 0) {
-          // Canvas not ready yet, skip this render
-          isRenderingRef.current = false;
-          return;
-        }
-
         // Render the actual document content first
+        // The renderer will set the canvas dimensions appropriately
         if (document.type === DocumentType.PDF) {
           await pdfRendererRef.current.renderPage(
             currentPage,
@@ -305,6 +335,13 @@ export default function IndexPage() {
           );
         } else {
           await imageRendererRef.current.renderImage(canvasRef.current, 1.0);
+        }
+
+        // Verify canvas was properly rendered
+        if (canvasRef.current.width === 0 || canvasRef.current.height === 0) {
+          console.warn("Canvas has zero dimensions after rendering");
+          isRenderingRef.current = false;
+          return;
         }
 
         // Update redaction regions for current page
@@ -753,6 +790,7 @@ export default function IndexPage() {
 
                 <div className="flex-1 flex flex-col">
                   <CanvasViewer
+                    key={document?.id || "no-document"}
                     canvasController={canvasControllerRef.current}
                     onCanvasReady={handleCanvasReady}
                     onOpenRightPanel={onOpenRightModal}

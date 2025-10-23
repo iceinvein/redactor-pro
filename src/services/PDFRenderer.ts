@@ -21,6 +21,11 @@ export class PDFRenderer implements IPDFRenderer {
    */
   async loadPDF(data: ArrayBuffer): Promise<void> {
     try {
+      // Clean up previous document if it exists
+      if (this.pdfDocument) {
+        await this.cleanup();
+      }
+
       const loadingTask = pdfjsLib.getDocument({ data });
       this.pdfDocument = await loadingTask.promise;
     } catch (error) {
@@ -28,6 +33,38 @@ export class PDFRenderer implements IPDFRenderer {
         `Failed to load PDF: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
+  }
+
+  /**
+   * Clean up resources and dispose of the current PDF document
+   */
+  private async cleanup(): Promise<void> {
+    // Cancel any ongoing render task
+    if (this.currentRenderTask) {
+      try {
+        this.currentRenderTask.cancel();
+      } catch (_e) {
+        // Ignore cancellation errors
+      }
+      this.currentRenderTask = null;
+    }
+
+    // Destroy the PDF document to free up memory
+    if (this.pdfDocument) {
+      try {
+        await this.pdfDocument.destroy();
+      } catch (_e) {
+        // Ignore cleanup errors
+      }
+      this.pdfDocument = null;
+    }
+  }
+
+  /**
+   * Dispose of all resources (call this when done with the renderer)
+   */
+  async dispose(): Promise<void> {
+    await this.cleanup();
   }
 
   /**

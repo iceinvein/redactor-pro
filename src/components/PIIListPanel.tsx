@@ -79,14 +79,14 @@ export const PIIListPanel = ({
   };
 
   // Defensive check: ensure detections is an array and filter out invalid entries
-  const safeDetections = Array.isArray(detections) 
+  const safeDetections = Array.isArray(detections)
     ? detections.filter(d => {
-        if (!d || typeof d !== 'object') return false;
-        if (!d.type || !d.text) return false;
-        if (!d.words || !Array.isArray(d.words)) return false;
-        if (typeof d.confidence !== 'number') return false;
-        return true;
-      })
+      if (!d || typeof d !== 'object') return false;
+      if (!d.type || !d.text) return false;
+      if (!d.words || !Array.isArray(d.words)) return false;
+      if (typeof d.confidence !== 'number') return false;
+      return true;
+    })
     : [];
 
   return (
@@ -130,19 +130,17 @@ export const PIIListPanel = ({
                       isPressable
                       isHoverable
                       onPress={() => onHighlightDetection(detectionId)}
-                      className={`bg-content2/50 backdrop-blur-sm border transition-all duration-200 w-full ${
-                        isEnabled
+                      className={`bg-content2/50 backdrop-blur-sm border transition-all duration-200 w-full ${isEnabled
                           ? "border-primary/50 shadow-md"
                           : "border-divider/50 opacity-60"
-                      }`}
+                        }`}
                     >
                       <CardBody className="p-3">
                         <div className="flex items-center gap-3">
                           {/* Icon */}
                           <div
-                            className={`shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center ${
-                              PII_TYPE_COLORS[detection.type] || PII_TYPE_COLORS[PIIType.OTHER]
-                            }`}
+                            className={`shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center ${PII_TYPE_COLORS[detection.type] || PII_TYPE_COLORS[PIIType.OTHER]
+                              }`}
                           >
                             <Icon className="w-6 h-6" />
                           </div>
@@ -183,13 +181,12 @@ export const PIIListPanel = ({
                                       duration: 0.5,
                                       delay: index * 0.05,
                                     }}
-                                    className={`h-full rounded-full ${
-                                      detection.confidence >= 0.8
+                                    className={`h-full rounded-full ${detection.confidence >= 0.8
                                         ? "bg-success"
                                         : detection.confidence >= 0.5
                                           ? "bg-warning"
                                           : "bg-danger"
-                                    }`}
+                                      }`}
                                   />
                                 </div>
                               </div>

@@ -29,14 +29,17 @@ export const CanvasViewer = ({
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
 
-  // Initialize canvas
+  // Initialize canvas - only call onCanvasReady when canvas first mounts
   useEffect(() => {
-    if (canvasRef.current && !canvasController) {
+    if (canvasRef.current) {
       // Only notify parent that canvas is ready
       // Don't initialize controller here - let parent handle it
       onCanvasReady?.(canvasRef.current);
     }
-  }, [onCanvasReady, canvasController]);
+    // Only run when component mounts, not when onCanvasReady changes
+    // This prevents re-initialization which would clear the canvas
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle zoom
   const handleZoomIn = useCallback(() => {

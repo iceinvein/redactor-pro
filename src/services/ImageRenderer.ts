@@ -12,6 +12,9 @@ export class ImageRenderer implements IImageRenderer {
    * @param file - Image file to load
    */
   async loadImage(file: File): Promise<void> {
+    // Clean up previous image if it exists
+    this.cleanup();
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
 
@@ -49,6 +52,9 @@ export class ImageRenderer implements IImageRenderer {
    * @param dataUrl - Data URL string
    */
   async loadImageFromDataURL(dataUrl: string): Promise<void> {
+    // Clean up previous image if it exists
+    this.cleanup();
+
     return new Promise((resolve, reject) => {
       const img = new Image();
 
@@ -63,6 +69,24 @@ export class ImageRenderer implements IImageRenderer {
 
       img.src = dataUrl;
     });
+  }
+
+  /**
+   * Clean up resources
+   */
+  private cleanup(): void {
+    if (this.image) {
+      this.image.src = "";
+      this.image = null;
+    }
+    this.imageData = null;
+  }
+
+  /**
+   * Dispose of all resources (call this when done with the renderer)
+   */
+  dispose(): void {
+    this.cleanup();
   }
 
   /**
