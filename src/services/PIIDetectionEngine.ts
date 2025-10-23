@@ -345,8 +345,15 @@ export class PIIDetectionEngineImpl implements PIIDetectionEngine {
       const wordEnd = wordStart + word.text.length;
       currentIndex = wordEnd;
 
-      // Check if word overlaps with the match range
-      if (wordStart < endIndex && wordEnd > startIndex) {
+      // More strict overlap check: word must be substantially within the match range
+      // A word is included if at least 50% of it falls within the match range
+      const overlapStart = Math.max(wordStart, startIndex);
+      const overlapEnd = Math.min(wordEnd, endIndex);
+      const overlapLength = Math.max(0, overlapEnd - overlapStart);
+      const wordLength = wordEnd - wordStart;
+      
+      // Include word only if more than 50% of it overlaps with the match
+      if (overlapLength > wordLength * 0.5) {
         matchedWords.push(word);
       }
 
