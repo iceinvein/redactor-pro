@@ -78,21 +78,32 @@ export const PIIListPanel = ({
     return "text-danger";
   };
 
+  // Defensive check: ensure detections is an array and filter out invalid entries
+  const safeDetections = Array.isArray(detections) 
+    ? detections.filter(d => {
+        if (!d || typeof d !== 'object') return false;
+        if (!d.type || !d.text) return false;
+        if (!d.words || !Array.isArray(d.words)) return false;
+        if (typeof d.confidence !== 'number') return false;
+        return true;
+      })
+    : [];
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold">Detected PII</h3>
-        {detections.length > 0 && (
+        {safeDetections.length > 0 && (
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-xs font-medium text-primary">
-            {detections.length} item{detections.length !== 1 ? "s" : ""}
+            {safeDetections.length} item{safeDetections.length !== 1 ? "s" : ""}
           </div>
         )}
       </div>
 
       {/* List */}
       <div className="flex-1 overflow-y-auto">
-        {detections.length === 0 ? (
+        {safeDetections.length === 0 ? (
           <EmptyState
             icon="search"
             title="No PII detected yet"
@@ -101,10 +112,10 @@ export const PIIListPanel = ({
         ) : (
           <div className="space-y-2 pr-1">
             <AnimatePresence initial={false}>
-              {detections.map((detection, index) => {
+              {safeDetections.map((detection, index) => {
                 const detectionId = getDetectionId(detection, index);
                 const isEnabled = enabledDetections.has(detectionId);
-                const Icon = PII_TYPE_ICONS[detection.type];
+                const Icon = PII_TYPE_ICONS[detection.type] || FileText;
 
                 return (
                   <motion.div
@@ -130,7 +141,7 @@ export const PIIListPanel = ({
                           {/* Icon */}
                           <div
                             className={`shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center ${
-                              PII_TYPE_COLORS[detection.type]
+                              PII_TYPE_COLORS[detection.type] || PII_TYPE_COLORS[PIIType.OTHER]
                             }`}
                           >
                             <Icon className="w-6 h-6" />
@@ -141,7 +152,7 @@ export const PIIListPanel = ({
                             {/* Type Label and Switch */}
                             <div className="flex items-center justify-between gap-2 mb-1.5">
                               <span className="text-sm font-bold text-foreground">
-                                {PII_TYPE_LABELS[detection.type]}
+                                {PII_TYPE_LABELS[detection.type] || "Unknown"}
                               </span>
                               <Switch
                                 size="sm"
@@ -203,7 +214,7 @@ export const PIIListPanel = ({
       </div>
 
       {/* Footer Stats */}
-      {detections.length > 0 && (
+      {safeDetections.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -221,14 +232,14 @@ export const PIIListPanel = ({
                       Active Redactions
                     </div>
                     <div className="text-lg font-bold text-primary">
-                      {enabledDetections.size}/{detections.length}
+                      {enabledDetections.size}/{safeDetections.length}
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-xl font-bold text-foreground">
                     {Math.round(
-                      (enabledDetections.size / detections.length) * 100,
+                      (enabledDetections.size / safeDetections.length) * 100,
                     )}
                     %
                   </div>
